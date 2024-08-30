@@ -301,3 +301,168 @@ pub(crate) fn on_save_submit<C: Chip + 'static + serde::ser::Serialize>(
 ```
 
 The `on_save_submit` function gets the submitted board identifier name and writes the configuration to a JSON file with it. 
+
+### `menu.rs` functions
+
+The `menu.rs` functions create Cursive views that serve as configuration menus for everything except the capsules (they have a separate submodule, `capsule`, that was created to facilitate adding new capsules)
+
+- #### `chip_select` 
+```rust
+/// Select menu of supported chips.
+pub(crate) fn chip_select() -> cursive::views::SelectView<items::SupportedChip>
+```
+
+The `chip_select` function creates a menu for selecting the chip for which the configuration is done.
+
+- #### `capsules_menu`
+```rust
+/// Menu for configuring the **capsules** the board will implement.
+pub(crate) fn capsules_menu<C: Chip + 'static + serde::ser::Serialize>(
+) -> cursive::views::ResizedView<cursive::views::LinearLayout>
+```
+
+The `capsules_menu` function creates a menu with all the capsules for the user to choose which one to add and configure.
+
+- #### `capsule_popup`
+```rust
+/// Menu for configuring a capsule.
+pub(crate) fn capsule_popup<
+    C: Chip + 'static + serde::ser::Serialize,
+    V: cursive::view::IntoBoxedView + 'static,
+>(
+    view: V,
+) -> cursive::views::LinearLayout
+```
+
+The `capsule_popup` function is a helper one, offering a standard way to create a capsule configuration menu.
+
+- #### `checkbox_popup`
+```rust
+/// A popup with a checkbox.
+pub fn checkbox_popup<
+    V: cursive::view::IntoBoxedView + 'static,
+    F: 'static + Fn(&mut cursive::Cursive),
+    G: 'static + Fn(&mut cursive::Cursive),
+>(
+    view: V,
+    submit_callback: F,
+    quit_callback: G,
+) -> cursive::views::LinearLayout
+```
+
+The `checkbox_popup` function is a helper one, offering a standard way to create a popup menu with a checkbox.
+
+- #### `no_support`
+```rust
+/// Popup in case of a peripheral not being supported.
+pub(crate) fn no_support(peripheral: &'static str) -> cursive::views::TextView
+```
+
+The `no_support` function creates a popup telling the user that the chip does not have support for a peripheral.
+
+- #### `capsule_not_configured`
+```rust
+/// Popup in case of a dependency capsule not being configured.
+pub(crate) fn capsule_not_configured(capsule: &'static str) -> cursive::views::TextView
+```
+
+The `capsule_not_configured` function creates a popup telling the user that the capsule he wants to enable needs another capsule to be enabled.
+
+- #### `pin_list_disabled`
+```rust
+/// A checkbox list that has disabled entries if they can't be used.
+pub(crate) fn pin_list_disabled<C: Chip>(
+    pin_list: Vec<(
+        <<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio as Gpio>::PinId,
+        PinFunction,
+    )>,
+    gpio_use: PinFunction,
+    name: &str,
+) -> ScrollView<LinearLayout>
+```
+
+The `pin_list_disabled` function creates a checkbox list for the pins in which the pins that are used for the same reason as `gpio_use` appear as checked and the pins that are used for other reasons are disabled to avoid using the same pin for multiple functions.
+
+- #### `kernel_resources_menu` 
+```rust
+/// Menu for configuring the **kernel resources** the board will use.
+pub(crate) fn kernel_resources_menu<C: Chip + 'static + serde::ser::Serialize>(
+) -> cursive::views::ResizedView<cursive::views::LinearLayout>
+```
+
+The `kernel_resources_menu` function creates a menu with all the kernel resources for the user to choose which one to configure.
+
+- #### `scheduler_menu`
+```rust
+/// Scheduler configuration menu.
+pub(crate) fn scheduler_menu<C: Chip + 'static + serde::ser::Serialize>(
+    current_scheduler: SchedulerType,
+) -> cursive::views::ResizedView<cursive::views::LinearLayout>
+```
+
+The `scheduler_menu` function provides a configuration menu in which the user can choose the scheduler type.
+
+- #### `syscall_filter_menu`
+```rust
+/// Syscall filter configuration menu.
+pub(crate) fn syscall_filter_menu<C: Chip + 'static + serde::ser::Serialize>(
+    current_filter: SyscallFilterType,
+) -> cursive::views::ResizedView<cursive::views::LinearLayout>
+```
+
+The `syscall_filter_menu` function provides a configuration menu in which the user can choose the syscall filter.
+
+- #### `processes_menu`
+```rust
+/// Process count configuration menu.
+pub(crate) fn processes_menu<C: Chip + 'static + serde::ser::Serialize>(
+    proc_count: usize,
+) -> cursive::views::Dialog
+```
+
+The `processes_menu` function provides a configuration menu in which the user can choose the number of processes.
+
+- #### `stack_menu`
+```rust
+/// Stack memory size configuration menu.
+pub(crate) fn stack_menu<C: Chip + 'static + serde::ser::Serialize>(
+    current_stack_size: usize,
+) -> cursive::views::Dialog
+```
+
+The `stack_menu` function provides a configuration menu in which the user can choose the stack memory size.
+
+- #### `status_bar`
+```rust
+/// Status bar at top.
+pub(crate) fn status_bar() -> LinearLayout
+```
+
+The `status_bar` function builds the status bar that stays at the top of the screen during the configuration process.
+
+- #### `board_config_menu`
+```rust
+/// Board configuration menu.
+pub(crate) fn board_config_menu<C: Chip + 'static + serde::ser::Serialize>(
+) -> cursive::views::ResizedView<cursive::views::LinearLayout>
+```
+
+The `board_config_menu` function creates a menu with all the configuration options.
+
+- #### `init_configurator`
+```rust
+/// Build the configurator by adding the layers defined in [`crate::menu::layers`]
+/// and initalizing [`crate::menu::builder::CONFIGURATION_BUILDER`].
+pub fn init_configurator() -> cursive::CursiveRunnable
+```
+
+The `init_configurator` function builds the configurator by creating the initial Cursive views and displaying them.
+
+- #### `save_dialog`
+```rust
+/// Menu used for saving the configuration to a JSON file.
+pub fn save_dialog<C: parse::peripherals::Chip + 'static + serde::ser::Serialize>(
+) -> cursive::views::LinearLayout
+```
+
+The `save_dialog` function provides the menu for saving the configuration to a JSON file.
