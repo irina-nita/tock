@@ -171,7 +171,7 @@ pub(crate) fn on_chip_submit(siv: &mut cursive::Cursive, submit: &items::Support
     };
 }
 
-/// Initialize a board configuration session based on the submitted chip.
+/// Update the inner data based on the scheduler type that was selected.
 pub(crate) fn on_scheduler_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
     submit: &SchedulerType,
@@ -181,6 +181,7 @@ pub(crate) fn on_scheduler_submit<C: Chip + 'static + serde::ser::Serialize>(
     }
 }
 
+/// Update the inner data based on the syscall filter that was selected.
 pub(crate) fn on_syscall_filter_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
     submit: &SyscallFilterType,
@@ -433,7 +434,7 @@ pub(crate) fn write_json<C: Chip + 'static + serde::ser::Serialize>(data: &mut D
     file.write_all(board_config.as_bytes()).unwrap();
 }
 
-/// Exit the current window and go back to the previous one.
+/// Get the board identifier name then save the configuration using it
 pub(crate) fn on_save_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
 ) {

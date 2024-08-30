@@ -23,7 +23,7 @@ The menu items are currently:
 - `main.rs`: entry point of the configurator. It starts the TUI.
 - `lib.rs`: exposes the modules.
 - `menu.rs`: provides general (as in not for capsules) menus to be used in the configuration of Tock.
-- `state.rs`: has the functions that handle the internal state of the configurator.
+- `state.rs`: has the functions that handle the internal state of the configurator (details about its functions can be found [here](#staters-functions)).
 - The `capsule` module: contains the configuration menus and logic for each Tock capsule.
 - The `utils` module: contains different macros and items used for the TUI.
 
@@ -60,19 +60,19 @@ The members of the struct are:
 #### Associated functions
 
 ```rust
-pub(crate) fn new(chip: C) -> Data<C>; 
+pub(crate) fn new(chip: C) -> Data<C> 
 
 /// Add a view to the view stack.
-pub(crate) fn push_view(&mut self, view: Box<dyn cursive::View>);
+pub(crate) fn push_view(&mut self, view: Box<dyn cursive::View>)
 
 /// Pop view from the view stack.
-pub(crate) fn pop_view(&mut self) -> Option<Box<dyn cursive::View>>;
+pub(crate) fn pop_view(&mut self) -> Option<Box<dyn cursive::View>>
 
 /// Take the port and returns the helper struct for it.
 pub fn gpio(
     &self,
     gpio: &<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio,
-) -> Option<&GpioHelper<C>>;
+) -> Option<&GpioHelper<C>>
 
 /// Change the pin status that is stored inside the configurator
 /// inner state.
@@ -81,7 +81,7 @@ pub fn change_pin_status(
     gpio: Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
     searched_pin: <<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio as Gpio>::PinId,
     status: PinFunction,
-);
+)
 ```
 
 - The `new` function creates a new `Data` instance from a chip.
@@ -97,7 +97,7 @@ pub fn change_pin_status(
 `ViewStack` represents a vector of Cursive views that is used as a stack (by using `Vec::push` and `Vec::pop`):
 
 ```rust
-pub(crate) type ViewStack = Vec<Box<dyn cursive::View>>;
+pub(crate) type ViewStack = Vec<Box<dyn cursive::View>>
 ```
 
 ### The `GpioHelper` struct
@@ -120,9 +120,9 @@ The members of the struct are:
 #### Associated functions
 
 ```rust
-pub(crate) fn new(gpio: Rc<<C::Peripherals as DefaultPeripherals>::Gpio>) -> Self;
+pub(crate) fn new(gpio: Rc<<C::Peripherals as DefaultPeripherals>::Gpio>) -> Self
 
-pub fn pins(&self) -> &GpioMap<C>;
+pub fn pins(&self) -> &GpioMap<C>
 ```
 
 - The `new` function creates a new `GpioHelper` instance from a `Gpio` reference by getting a list of all its pins and initializing them with the `PinFunction::None` variant.
@@ -137,7 +137,7 @@ The `GpioMap` type represents an alias for a vector of pairs composed of a pin I
 pub(crate) type GpioMap<C> = Vec<(
     <<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio as Gpio>::PinId,
     PinFunction,
-)>;
+)>
 ```
 
 `PinFunction` is an enum that represents the possible usage scenarios for the pin:
@@ -150,3 +150,154 @@ pub enum PinFunction {
     Gpio,
 }
 ```
+
+### `state.rs` functions
+
+- #### `push_layer`
+```rust
+/// Push a layer to the view stack.
+pub(crate) fn push_layer<
+    V: cursive::view::IntoBoxedView + 'static,
+    C: Chip + 'static + serde::ser::Serialize,
+>(
+    siv: &mut cursive::Cursive,
+    layer: V,
+)
+```
+
+The `push_layer` function takes the current Cursive view, adds it to the ViewStack, then displays the view given as the `layer` parameter.
+
+- #### `on_chip_submit`
+```rust
+/// Initialize a board configuration session based on the submitted chip.
+pub(crate) fn on_chip_submit(siv: &mut cursive::Cursive, submit: &items::SupportedChip)
+```
+
+The `on_chip_submit` function initializes the inner Cursive data based on the chip that was selected at the start of the configuration process.
+
+- #### `on_scheduler_submit`
+```rust
+/// Update the inner data based on the scheduler type that was selected.
+pub(crate) fn on_scheduler_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+    submit: &SyscallFilterType,
+)
+```
+
+The `on_scheduler_submit` function updates the inner data that is stored in the Cursive instance based on the type of scheduler that was selected by the user.
+
+- #### `on_syscall_filter_submit`
+```rust
+/// Update the inner data based on the syscall filter that was selected.
+pub(crate) fn on_syscall_filter_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+    submit: &SyscallFilterType,
+)
+```
+
+The `on_syscall_filter_submit` function updates the inner data that is stored in the Cursive instance based on the type of scheduler that was selected by the user.
+
+- #### `on_config_submit`
+```rust
+/// Open a new configuration window based on the submitted config field.
+pub(crate) fn on_config_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+    submit: &items::ConfigurationField,
+)
+```
+
+The `on_config_submit` function opens a new configuration window based on the desired configuration field.
+
+- #### `on_kernel_resource_submit`
+```rust
+/// Open the corresponding config window based on the submitted kernel resource.
+pub(crate) fn on_kernel_resource_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+    submit: &items::KernelResources,
+)
+```
+
+The `on_kernel_resource_submit` function opens a new configuration window based on the chosen kernel resource to be configured.
+
+- #### `on_capsule_submit`
+```rust
+/// Open the corresponding config window based on the submitted capsule.
+pub(crate) fn on_capsule_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+    submit: &items::SupportedCapsule,
+)
+```
+
+The `on_capsule_submit` function opens a new configuration window based on the chosen capsule to be configured.
+
+- #### `on_exit_submit`
+```rust
+/// Exit the current window and go back to the previous one.
+pub(crate) fn on_exit_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+)
+```
+
+The `on_exit_submit` function closes the current view and opens the previous view. It does this by using the `ViewStack`.
+
+- #### `on_quit_submit`
+```rust
+/// Exit the current window and go to the "save to JSON" menu.
+pub(crate) fn on_quit_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+)
+```
+
+The `on_quit_submit` function closes the current view and opens the menu for saving the configuration in the JSON format.
+
+- #### `on_name_submit`
+```rust
+/// Write to the JSON file and quit the configurator.
+pub(crate) fn on_name_submit<C: Chip + 'static + serde::Serialize>(
+    siv: &mut cursive::Cursive,
+    name: &str,
+)
+```
+
+The `on_name_submit` function calls the [`write_json`](#write_json) function and quits the configurator.
+
+- #### `on_count_submit_proc`
+```rust
+/// Save the process count to use in the JSON.
+pub(crate) fn on_count_submit_proc<C: Chip + 'static + serde::Serialize>(
+    siv: &mut cursive::Cursive,
+    name: &str,
+)
+```
+
+The `on_count_submit_proc` function updates the data that is stored inside the Cursive instance with the process count that was submitted by the user.
+
+- #### `on_count_submit_stack`
+```rust
+/// Save the stack memory size to use in the JSON.
+pub(crate) fn on_count_submit_stack<C: Chip + 'static + serde::Serialize>(
+    siv: &mut cursive::Cursive,
+    name: &str,
+)
+```
+
+The `on_count_submit_stack` function updates the data that is stored inside the Cursive instance with the stack memory size that was submitted by the user. This function also provides the user with the possibility to enter the size as an hexadecimal number by appending the `0x` prefix to the number.
+
+- #### `write_json`
+```rust
+/// Write the contents of the inner Data to a JSON file
+pub(crate) fn write_json<C: Chip + 'static + serde::ser::Serialize>(data: &mut Data<C>)
+```
+
+The `write_json` function serializes the contents of `Data::platform` then writes the result to a JSON file named `.config.json`.
+
+- #### `on_save_submit`
+
+```rust
+/// Take the board identifier name then save the configuration using it
+pub(crate) fn on_save_submit<C: Chip + 'static + serde::ser::Serialize>(
+    siv: &mut cursive::Cursive,
+)
+```
+
+The `on_save_submit` function gets the submitted board identifier name and writes the configuration to a JSON file with it. 
