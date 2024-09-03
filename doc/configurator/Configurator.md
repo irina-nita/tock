@@ -22,10 +22,10 @@ The menu items are currently:
 
 - `main.rs`: entry point of the configurator. It starts the TUI.
 - `lib.rs`: exposes the modules.
-- `menu.rs`: provides general (as in not for capsules) menus to be used in the configuration of Tock.
+- `menu.rs`: provides general (as in not for capsules) menus to be used in the configuration of Tock (details about its functions can be found [here](#menurs-functions)).
 - `state.rs`: has the functions that handle the internal state of the configurator (details about its functions can be found [here](#staters-functions)).
-- The `capsule` module: contains the configuration menus and logic for each Tock capsule.
-- The `utils` module: contains different macros and items used for the TUI.
+- The `capsule` submodule: contains the configuration menus and logic for each Tock capsule.
+- The `utils` submodule: contains different macros and items used for the TUI (more details can be found [here](#the-utils-submodule)).
 
 ## Implementation details
 
@@ -466,3 +466,133 @@ pub fn save_dialog<C: parse::peripherals::Chip + 'static + serde::ser::Serialize
 ```
 
 The `save_dialog` function provides the menu for saving the configuration to a JSON file.
+
+### The `utils` submodule
+
+The `utils` submodule contains different macros and items used for the TUI. They are grouped in the following submodules:
+
+- #### `items.rs`
+
+This submodule exposes an interface for the configurator menu items with the `ToMenuItem` trait:
+
+```rust
+/// Trait for a type (usually an `enum`) that can be converted to a menu
+/// item as defined by cursive's `SelectView`.
+pub(crate) trait ToMenuItem {
+    type Item;
+    fn to_menu_item(self) -> (String, Self::Item);
+}
+```
+
+The `to_menu_item` function takes an item and converts it into a pair consisting of a label and the original item.
+
+The submodule also has enums for all of the main configurator menus.
+
+```rust
+/// Enum for the top-level configuration options for a board.
+#[derive(Clone, Copy)]
+pub(crate) enum ConfigurationField {
+    Capsules,
+    KernelResources,
+    SysCallFilter,
+    Processes,
+    StackMem,
+}
+
+/// Enum for the kernel resources for a board.
+#[derive(Clone, Copy)]
+pub(crate) enum KernelResources {
+    Scheduler,
+}
+
+/// Enum for supported chips by the configurator.
+#[derive(Clone, Copy)]
+pub(crate) enum SupportedChip {
+    MicroBit,
+}
+```
+
+- #### `macros.rs`
+
+This submodule exports 1 macro that is used to add an arrow (`⎯⎯>`) at the end of a given string. This is done to let the user know that the menu item will open another menu after selecting it.
+
+```rust
+/// The [`submenu!`] macro adds the submenu symbol `⎯⎯>` at the end of the given string.
+#[macro_export]
+macro_rules! submenu {
+    ($name:literal) => {
+        std::format!("{} -->", $name)
+    };
+}
+```
+
+- #### `views.rs`
+
+This submodule provides generic helper functions that create views used by the configurator:
+
+```rust
+/// Create a select menu generic over the options.
+pub(crate) fn select_menu<T, R, S, F>(items: Vec<(S, T)>, on_submit: F) -> SelectView<T>
+where
+    T: 'static,
+    S: Into<String>,
+    F: Fn(&mut cursive::Cursive, &T) -> R + 'static,
+
+/// Create a list of radio buttons with the `None` option (checked).
+pub(crate) fn radio_group_with_null<T, F>(items: Vec<T>, on_change: F) -> LinearLayout
+where
+    T: 'static + std::fmt::Display,
+    F: 'static + Fn(&mut cursive::Cursive, &Option<T>),
+
+/// Create a list of radio buttons with the `None` option.
+/// This variant has one of the other options checked.
+pub(crate) fn radio_group_with_null_known<T, F, U>(
+    items: Vec<T>,
+    on_change: F,
+    known: U,
+) -> LinearLayout
+where
+    T: 'static + std::fmt::Display,
+    U: 'static + std::fmt::Display,
+    F: 'static + Fn(&mut cursive::Cursive, &Option<T>),
+
+/// Create a list of radio buttons.
+/// This variant has one of the other options checked.
+pub(crate) fn radio_group_with_known<T, F, I, U>(items: I, on_change: F, known: U) -> LinearLayout
+where
+    T: 'static + std::fmt::Display,
+    U: 'static + std::fmt::Display,
+    F: 'static + Fn(&mut cursive::Cursive, &T),
+    I: IntoIterator<Item = T>,
+
+/// Create a dialog window with a `Quit` button.
+pub(crate) fn dialog<
+    V: cursive::view::IntoBoxedView + 'static,
+    F: 'static + Fn(&mut cursive::Cursive),
+    Q: 'static + Fn(&mut cursive::Cursive),
+>(
+    name: &'static str,
+    prompt: &'static str,
+    child_view: V,
+    exit_cb: Option<F>,
+    quit_cb: Option<Q>,
+) -> LinearLayout
+
+/// The main dialog component that will be reused for multiple layers.
+pub(crate) fn main_dialog<
+    V: cursive::view::IntoBoxedView + 'static,
+    F: 'static + Fn(&mut cursive::Cursive),
+    Q: 'static + Fn(&mut cursive::Cursive),
+>(
+    child_view: V,
+    exit_cb: Option<F>,
+    quit_cb: Option<Q>,
+) -> LinearLayout
+```
+
+- The `select_menu` function creates a selection menu over the provided generic options.
+- The `radio_group_with_null` function creates a list of radio buttons with the `None` option. This variant has the `None` option checked.
+- The `radio_group_with_null_known` function creates a list of radio buttons with the `None` option This variant has one of the other options checked.
+- The `radio_group_with_known` function creates a list of radio buttons without the `None` option. This variant has one of the other options checked.
+- The `dialog` function creates a dialog window with a `Quit` button.
+- The `main_dialog` function creates the main dialog component that will be reused for multiple layers.

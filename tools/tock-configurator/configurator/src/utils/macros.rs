@@ -12,16 +12,3 @@ macro_rules! submenu {
         std::format!("{} -->", $name)
     };
 }
-
-/// The [`capsule!`] macro adds the capsule config symbol `[ ]`/`[*]` at the beggining of the given string,
-/// as well as the submenu symbel `⎯⎯>` at the end of the given string.
-#[macro_export]
-macro_rules! capsule {
-    ($name:literal, $checked:expr) => {
-        if $checked {
-            std::format!("[*] {} -->", $name)
-        } else {
-            std::format!("[ ] {} -->", $name)
-        }
-    };
-}

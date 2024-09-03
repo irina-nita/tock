@@ -59,8 +59,6 @@ impl ToMenuItem for KernelResources {
 }
 
 /// Enum for supported chips by the configurator.
-///
-/// Each chip that implements the `blueprint` traits could be defined in the enum.
 #[derive(Clone, Copy)]
 pub(crate) enum SupportedChip {
     MicroBit,
