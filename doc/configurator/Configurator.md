@@ -596,3 +596,7 @@ pub(crate) fn main_dialog<
 - The `radio_group_with_known` function creates a list of radio buttons without the `None` option. This variant has one of the other options checked.
 - The `dialog` function creates a dialog window with a `Quit` button.
 - The `main_dialog` function creates the main dialog component that will be reused for multiple layers.
+
+### The `capsule` submodule
+
+The `capsule` submodule contains the configuration menus and logic for each Tock capsule. Each capsule has it own submodule where it implements their configuration process and must have a public function that can be used from `state.rs`. At the moment, there is a lot of boilerplate code in this submodule. In the future, we want to refactor this part to use generics or macros.
