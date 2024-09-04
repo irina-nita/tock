@@ -9,6 +9,28 @@ The application saves the configuration into a JSON file named `.config.json`.
 
 The TUI library that was chosen for the configurator is [`cursive`](https://github.com/gyscos/cursive) because it has great Linux compatibility and flexibility.
 
+## Table of contents
+
+<!-- TOC start -->
+
+- [Current status](#current-status)
+- [File structure](#file-structure)
+- [Implementation details](#implementation-details)
+   * [Configurator submodules interactions](#configurator-submodules-interactions)
+   * [The `Data` struct](#the-data-struct)
+      + [Associated functions](#associated-functions)
+      + [The `ViewStack` type](#the-viewstack-type)
+   * [The `GpioHelper` struct](#the-gpiohelper-struct)
+      + [Associated functions](#associated-functions-1)
+      + [The `GpioMap` type and the `PinFunction` enum](#the-gpiomap-type-and-the-pinfunction-enum)
+   * [`state.rs` functions](#staters-functions)
+   * [`menu.rs` functions](#menurs-functions)
+   * [The `utils` submodule](#the-utils-submodule)
+   * [The `capsule` submodule](#the-capsule-submodule)
+
+<!-- TOC end -->
+
+<!-- TOC --><a name="current-status"></a>
 ## Current status
 
 The menu items are currently: 
@@ -18,6 +40,7 @@ The menu items are currently:
 - processes (configuration menu for the number of processes)
 - stack memory (configuration menu for the stack memory size)
 
+<!-- TOC --><a name="file-structure"></a>
 ## File structure
 
 - `main.rs`: entry point of the configurator. It starts the TUI.
@@ -27,11 +50,14 @@ The menu items are currently:
 - The `capsule` submodule: contains the configuration menus and logic for each Tock capsule (more details can be found [here](#the-capsule-submodule)).
 - The `utils` submodule: contains different macros and items used for the TUI (more details can be found [here](#the-utils-submodule)).
 
+<!-- TOC --><a name="implementation-details"></a>
 ## Implementation details
 
+<!-- TOC --><a name="configurator-submodules-interactions"></a>
 ### Configurator submodules interactions
 ![](/doc/configurator/assets/configurator_interactions.png)
 
+<!-- TOC --><a name="the-data-struct"></a>
 ### The `Data` struct
 
 The main structure of the Configurator is the `Data` struct. This represent the inner data that needs to be kept by the Cursive instance during the configuration process.
@@ -60,6 +86,7 @@ The members of the struct are:
 - `views` represents a stack of the past views that can be used to go back in the configuration process.
 - `gpio_list` represents a vector of `GpioHelper` instances (which will be detailed in this [section](#the-gpiohelper-struct)). This is an option because some chips might not have GPIO support, so this list would be useless.
 
+<!-- TOC --><a name="associated-functions"></a>
 #### Associated functions
 
 ```rust
@@ -95,6 +122,7 @@ pub fn change_pin_status(
 
 - The `change_pin_status` function changes the usage of the selected pin by search all the pins from the `GpioHelper` until finding the right one.
 
+<!-- TOC --><a name="the-viewstack-type"></a>
 #### The `ViewStack` type
 
 `ViewStack` represents a vector of Cursive views that is used as a stack (by using `Vec::push` and `Vec::pop`):
@@ -103,6 +131,7 @@ pub fn change_pin_status(
 pub(crate) type ViewStack = Vec<Box<dyn cursive::View>>
 ```
 
+<!-- TOC --><a name="the-gpiohelper-struct"></a>
 ### The `GpioHelper` struct
 
 We want to keep the state of the GPIO pins to avoid selecting the same pin for two different so we will use a struct to keep track of the usage:
@@ -120,6 +149,7 @@ The members of the struct are:
 - `gpio` represents the GPIO bus that the helper is built around. It is used as an identifier when searching for a certain GPIO bus.
 - `pins` represents a list of the pins from the GPIO bus, paired with their usage.
 
+<!-- TOC --><a name="associated-functions-1"></a>
 #### Associated functions
 
 ```rust
@@ -132,6 +162,7 @@ pub fn pins(&self) -> &GpioMap<C>
 
 - The `pins` function returns a reference to the pin vector.
 
+<!-- TOC --><a name="the-gpiomap-type-and-the-pinfunction-enum"></a>
 #### The `GpioMap` type and the `PinFunction` enum
 
 The `GpioMap` type represents an alias for a vector of pairs composed of a pin ID and its usage:
@@ -154,6 +185,7 @@ pub enum PinFunction {
 }
 ```
 
+<!-- TOC --><a name="staters-functions"></a>
 ### `state.rs` functions
 
 - #### `push_layer`
@@ -305,6 +337,7 @@ pub(crate) fn on_save_submit<C: Chip + 'static + serde::ser::Serialize>(
 
 The `on_save_submit` function gets the submitted board identifier name and writes the configuration to a JSON file with it. 
 
+<!-- TOC --><a name="menurs-functions"></a>
 ### `menu.rs` functions
 
 The `menu.rs` functions create Cursive views that serve as configuration menus for everything except the capsules (they have a separate submodule, `capsule`, that was created to facilitate adding new capsules)
@@ -470,6 +503,7 @@ pub fn save_dialog<C: parse::peripherals::Chip + 'static + serde::ser::Serialize
 
 The `save_dialog` function provides the menu for saving the configuration to a JSON file.
 
+<!-- TOC --><a name="the-utils-submodule"></a>
 ### The `utils` submodule
 
 The `utils` submodule contains different macros and items used for the TUI. They are grouped in the following submodules:
@@ -600,6 +634,7 @@ pub(crate) fn main_dialog<
 - The `dialog` function creates a dialog window with a `Quit` button.
 - The `main_dialog` function creates the main dialog component that will be reused for multiple layers.
 
+<!-- TOC --><a name="the-capsule-submodule"></a>
 ### The `capsule` submodule
 
 The `capsule` submodule contains the configuration menus and logic for each Tock capsule. Each capsule has it own submodule where it implements their configuration process and must have a public function that can be used from `state.rs`. At the moment, there is a lot of boilerplate code in this submodule. In the future, we want to refactor this part to use generics or macros.
