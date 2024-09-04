@@ -24,10 +24,13 @@ The menu items are currently:
 - `lib.rs`: exposes the modules.
 - `menu.rs`: provides general (as in not for capsules) menus to be used in the configuration of Tock (details about its functions can be found [here](#menurs-functions)).
 - `state.rs`: has the functions that handle the internal state of the configurator (details about its functions can be found [here](#staters-functions)).
-- The `capsule` submodule: contains the configuration menus and logic for each Tock capsule.
+- The `capsule` submodule: contains the configuration menus and logic for each Tock capsule (more details can be found [here](#the-capsule-submodule)).
 - The `utils` submodule: contains different macros and items used for the TUI (more details can be found [here](#the-utils-submodule)).
 
 ## Implementation details
+
+### Configurator submodules interactions
+![](/doc/configurator/assets/configurator_interactions.png)
 
 ### The `Data` struct
 
