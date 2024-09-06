@@ -13,7 +13,7 @@ use cursive::{
 };
 
 use crate::{
-    items::ConfigurationField,
+    items::{ConfigurationField, KernelResources},
     menu::chip_select,
     utils::items::{SupportedCapsule, SupportedChip},
     views,
@@ -366,3 +366,168 @@ fn ble() {
     s.hit_keystroke(Key::Enter);
 }
 
+#[test]
+fn gpio() {
+    let mut s = BasicSetup::new();
+
+    select_item(&mut s, SupportedChip::MicroBit as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::Capsules as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, SupportedCapsule::GPIO as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 43, 1);
+
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 42, 1);
+
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    go_up(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 3, 3);
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
+fn scheduler() {
+    let mut s = BasicSetup::new();
+
+    select_item(&mut s, SupportedChip::MicroBit as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::KernelResources as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, KernelResources::Scheduler as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
+fn syscall_filter() {
+    let mut s = BasicSetup::new();
+
+    select_item(&mut s, SupportedChip::MicroBit as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::SysCallFilter as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
+fn processes() {
+    let mut s = BasicSetup::new();
+
+    select_item(&mut s, SupportedChip::MicroBit as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::Processes as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Backspace);
+
+    s.write_string("12");
+
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::Processes as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
+fn stack_memory() {
+    let mut s = BasicSetup::new();
+
+    select_item(&mut s, SupportedChip::MicroBit as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::StackMem as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+
+    s.write_string("12");
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::StackMem as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.write_string("12");
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::StackMem as usize);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}

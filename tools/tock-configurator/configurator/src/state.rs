@@ -333,23 +333,6 @@ pub(crate) fn on_capsule_submit<C: Chip + 'static + serde::ser::Serialize>(
     }
 }
 
-/// Give the next prompt from the GPIO capsule.
-#[allow(unused)]
-pub(crate) fn on_gpio_submit<
-    C: Chip + 'static + serde::Serialize,
-    F: 'static
-        + Fn(
-            Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
-        ) -> cursive::views::LinearLayout,
->(
-    siv: &mut cursive::Cursive,
-    submit: Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
-    popup: F,
-) {
-    siv.pop_layer();
-    siv.add_layer(popup(submit));
-}
-
 /// Exit the current window and go back to the previous one.
 pub(crate) fn on_exit_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
