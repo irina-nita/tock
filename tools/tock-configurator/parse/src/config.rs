@@ -16,7 +16,6 @@ capsules_config!(
     Index => Capsule<P: crate::DefaultPeripherals>,
     // The keys and values enums for the capsules map.
     {
-        CONSOLE => Console { uart: Rc<P::Uart>, baud_rate: usize},
         ALARM => Alarm { timer: Rc<P::Timer> },
         SPI => Spi { spi: Rc<P::Spi> },
         I2C => I2c { i2c: Rc<P::I2c> },
@@ -30,7 +29,7 @@ capsules_config!(
                                  temperature: bool,
                                  mag_data_rate: Lsm303MagnetoDataRate,
                                  mag_range: Lsm303Range  },
-
+        CONSOLE => Console { uart: Rc<P::Uart>, baud_rate: usize},
         TEMPERATURE => Temperature { temp: Rc<P::Temperature> },
         RNG => Rng { rng: Rc<P::Rng> },
         GPIO => Gpio { pins: Vec<<P::Gpio as crate::Gpio>::PinId> }

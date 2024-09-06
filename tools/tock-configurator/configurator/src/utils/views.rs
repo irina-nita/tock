@@ -17,7 +17,7 @@ where
     S: Into<String>,
     F: Fn(&mut cursive::Cursive, &T) -> R + 'static,
 {
-    let mut select_view = SelectView::new().h_align(HAlign::Left);
+    let mut select_view = SelectView::new().h_align(HAlign::Left).autojump();
 
     for item in items {
         select_view.add_item(item.0, item.1);

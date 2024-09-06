@@ -11,6 +11,8 @@ mod capsule;
 mod menu;
 mod state;
 mod utils;
+#[cfg(test)]
+mod test;
 
 // Reimports
 pub use menu::init_configurator as init;
