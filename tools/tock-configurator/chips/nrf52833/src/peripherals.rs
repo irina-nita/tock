@@ -67,6 +67,7 @@ impl parse::Component for Peripherals {
             #ident.init();
         })
     }
+
 }
 
 impl parse::DefaultPeripherals for Peripherals {
@@ -81,9 +82,6 @@ impl parse::DefaultPeripherals for Peripherals {
     type Flash = crate::Flash;
     type Hmac = parse::NoSupport;
     type Aes = parse::NoSupport;
-    type Pattgen = parse::NoSupport;
-    type SystemResetController = parse::NoSupport;
-    type AlertHandler = parse::NoSupport;
 
     fn uart(&self) -> Result<&[Rc<Self::Uart>], parse::Error> {
         Ok(&self.uart)
