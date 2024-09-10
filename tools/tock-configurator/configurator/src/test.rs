@@ -13,10 +13,7 @@ use cursive::{
 };
 
 use crate::{
-    items::{ConfigurationField, KernelResources},
-    menu::chip_select,
-    utils::items::{SupportedCapsule, SupportedChip},
-    views,
+    items::{ConfigurationField, KernelResources}, menu::chip_select, utils::items::SupportedCapsule, views
 };
 
 pub struct BasicSetup {
@@ -124,7 +121,6 @@ fn tabs_and_enters(s: &mut BasicSetup, tab_count: usize, enter_count: usize) {
 fn rng() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -157,7 +153,6 @@ fn rng() {
 fn temperature() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -187,10 +182,41 @@ fn temperature() {
 }
 
 #[test]
+fn spi() {
+    let mut s = BasicSetup::new();
+
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::Capsules as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, SupportedCapsule::SPI as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    go_up(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
 fn i2c() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -223,7 +249,6 @@ fn i2c() {
 fn console() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -245,6 +270,25 @@ fn console() {
     s.hit_keystroke(Key::Tab);
     s.hit_keystroke(Key::Enter);
 
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.write_char('t');
+    s.hit_keystroke(Key::Enter);
+
     go_up(&mut s, 1);
     s.hit_keystroke(Key::Enter);
     s.hit_keystroke(Key::Enter);
@@ -260,7 +304,6 @@ fn console() {
 fn flash() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -282,6 +325,19 @@ fn flash() {
     s.hit_keystroke(Key::Tab);
     s.hit_keystroke(Key::Enter);
 
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.hit_keystroke(Key::Backspace);
+    s.write_char('t');
+    s.hit_keystroke(Key::Enter);
+
     go_up(&mut s, 1);
     s.hit_keystroke(Key::Enter);
     s.hit_keystroke(Key::Enter);
@@ -297,7 +353,6 @@ fn flash() {
 fn alarm() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -330,7 +385,6 @@ fn alarm() {
 fn ble() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -367,10 +421,38 @@ fn ble() {
 }
 
 #[test]
+fn lsm303agr() {
+    let mut s = BasicSetup::new();
+
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, ConfigurationField::Capsules as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, SupportedCapsule::LSM303AGR as usize);
+    s.hit_keystroke(Key::Enter);
+
+    select_item(&mut s, 1);
+    s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Enter);
+    s.hit_keystroke(Key::Enter);
+
+    tabs_and_enters(&mut s, 2, 1);
+
+    s.write_string("microbit");
+
+    s.hit_keystroke(Key::Tab);
+    s.hit_keystroke(Key::Enter);
+}
+
+#[test]
 fn gpio() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Capsules as usize);
@@ -416,7 +498,6 @@ fn gpio() {
 fn scheduler() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::KernelResources as usize);
@@ -439,7 +520,6 @@ fn scheduler() {
 fn syscall_filter() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::SysCallFilter as usize);
@@ -459,7 +539,6 @@ fn syscall_filter() {
 fn processes() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::Processes as usize);
@@ -490,7 +569,6 @@ fn processes() {
 fn stack_memory() {
     let mut s = BasicSetup::new();
 
-    select_item(&mut s, SupportedChip::MicroBit as usize);
     s.hit_keystroke(Key::Enter);
 
     select_item(&mut s, ConfigurationField::StackMem as usize);

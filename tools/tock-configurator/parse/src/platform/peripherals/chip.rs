@@ -8,7 +8,7 @@
 use super::{
     ble::BleAdvertisement, gpio::Gpio, timer::Timer, uart::Uart, Flash, I2c, Rng, Spi, Temperature,
 };
-use crate::Component;
+use crate::{config::Index, Component};
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Clone, Copy, serde::Serialize, serde::Deserialize)]
@@ -116,4 +116,6 @@ pub trait Chip: Component {
 
     /// Return a pointer to the chip's systick.
     fn systick(&self) -> Result<Rc<Self::Systick>, crate::Error>;
+
+    fn supported_capsules(&self) -> Vec<Index>;
 }

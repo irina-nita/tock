@@ -59,16 +59,41 @@ impl ToMenuItem for KernelResources {
 }
 
 /// Enum for supported chips by the configurator.
+#[cfg(not(test))]
 #[derive(Clone, Copy)]
 pub(crate) enum SupportedChip {
     MicroBit,
 }
 
+/// Enum for supported chips by the configurator with the mock chip added.
+/// Only for testing purposes.
+#[cfg(test)]
+#[derive(Clone, Copy)]
+pub(crate) enum SupportedChip {
+    Mock,
+    MicroBit,
+}
+
+#[cfg(not(test))]
 impl ToMenuItem for SupportedChip {
     type Item = Self;
     fn to_menu_item(self) -> (String, Self::Item) {
         (
             match self {
+                SupportedChip::MicroBit => crate::submenu!("microbit"),
+            },
+            self,
+        )
+    }
+}
+
+#[cfg(test)]
+impl ToMenuItem for SupportedChip {
+    type Item = Self;
+    fn to_menu_item(self) -> (String, Self::Item) {
+        (
+            match self {
+                SupportedChip::Mock => crate::submenu!("mock"),
                 SupportedChip::MicroBit => crate::submenu!("microbit"),
             },
             self,

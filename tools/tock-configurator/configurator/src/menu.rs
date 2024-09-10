@@ -25,6 +25,7 @@ use parse::syscall_filter::SyscallFilterType;
 use state::PinFunction;
 
 /// Select menu of supported chips.
+#[cfg(not(test))]
 pub(crate) fn chip_select() -> cursive::views::SelectView<items::SupportedChip> {
     views::select_menu::<items::SupportedChip, (), String, _>(
         vec![items::ToMenuItem::to_menu_item(
@@ -34,24 +35,27 @@ pub(crate) fn chip_select() -> cursive::views::SelectView<items::SupportedChip> 
     )
 }
 
+/// Testing select menu.
+#[cfg(test)]
+pub(crate) fn chip_select() -> cursive::views::SelectView<items::SupportedChip> {
+    views::select_menu::<items::SupportedChip, (), String, _>(
+        vec![
+            items::ToMenuItem::to_menu_item(items::SupportedChip::Mock),
+            items::ToMenuItem::to_menu_item(
+            items::SupportedChip::MicroBit,
+        )], 
+        crate::state::on_chip_submit,
+    )
+}
+
 /// Menu for configuring the **capsules** the board will implement.
 pub(crate) fn capsules_menu<C: Chip + 'static + serde::ser::Serialize>(
+    supported_capsules: Vec<items::SupportedCapsule>
 ) -> cursive::views::ResizedView<cursive::views::LinearLayout> {
     // List of capsules that could be configured for our board.
     views::main_dialog(
         LinearLayout::vertical().child(cursive::views::ScrollView::new(views::select_menu(
-            vec![
-                items::SupportedCapsule::ALARM.to_menu_item(),
-                items::SupportedCapsule::SPI.to_menu_item(),
-                items::SupportedCapsule::I2C.to_menu_item(),
-                items::SupportedCapsule::BLE.to_menu_item(),
-                items::SupportedCapsule::FLASH.to_menu_item(),
-                items::SupportedCapsule::LSM303AGR.to_menu_item(),
-                items::SupportedCapsule::CONSOLE.to_menu_item(),
-                items::SupportedCapsule::TEMPERATURE.to_menu_item(),
-                items::SupportedCapsule::RNG.to_menu_item(),
-                items::SupportedCapsule::GPIO.to_menu_item(),
-            ],
+            supported_capsules.into_iter().map(|capsule| capsule.to_menu_item()).collect(),
             state::on_capsule_submit::<C>,
         ))),
         Some(state::on_exit_submit::<C>),
@@ -94,23 +98,6 @@ pub fn checkbox_popup<
         Some(submit_callback),
         Some(quit_callback),
     )
-}
-
-/// Popup in case of a peripheral not being supported.
-pub(crate) fn no_support(peripheral: &'static str) -> cursive::views::TextView {
-    TextView::new(format!(
-        "The chip does not have support for the {} peripheral.",
-        peripheral,
-    ))
-}
-
-/// Popup in case of a dependency capsule not being configured.
-#[allow(unused)]
-pub(crate) fn capsule_not_configured(capsule: &'static str) -> cursive::views::TextView {
-    TextView::new(format!(
-        "This capsule depends on the {} capsule. Please enable it to configure this capsule.",
-        capsule,
-    ))
 }
 
 /// A checkbox list that has disabled entries if they can't be used.

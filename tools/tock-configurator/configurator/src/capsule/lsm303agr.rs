@@ -12,8 +12,6 @@ use crate::state::Data;
 use crate::{menu::capsule_popup, views};
 use parse::peripherals::{Chip, DefaultPeripherals};
 
-const PERIPHERAL: &str = "I2C";
-
 /// Menu for configuring the Lsm303agr capsule.
 pub fn config<C: Chip + 'static + serde::Serialize>(
     chip: Rc<C>,
@@ -24,18 +22,14 @@ pub fn config<C: Chip + 'static + serde::Serialize>(
     match previous_state {
         // If there isn't a LSM303AGR already configured, we switch to another menu.
         None => config_none(chip),
-        Some(inner) => match chip.peripherals().i2c() {
+        Some(inner) => {
+            let i2c_peripherals = Vec::from(chip.peripherals().i2c().unwrap());
             // If we have at least one I2C peripheral, we make a list with it.
-            Ok(uart_peripherals) => {
-                capsule_popup::<C, _>(crate::views::radio_group_with_null_known(
-                    Vec::from(uart_peripherals),
-                    move |siv, submit| on_bus_submit::<C>(siv, submit),
-                    inner,
-                ))
-            }
-            // If we don't have any I2C peripheral, we show a popup
-            // with an error describing this.
-            Err(_) => capsule_popup::<C, _>(crate::menu::no_support(PERIPHERAL)),
+            capsule_popup::<C, _>(crate::views::radio_group_with_null_known(
+                Vec::from(i2c_peripherals),
+                move |siv, submit| on_bus_submit::<C>(siv, submit),
+                inner,
+            ))
         },
     }
 }
@@ -44,14 +38,12 @@ pub fn config<C: Chip + 'static + serde::Serialize>(
 fn config_none<C: Chip + 'static + serde::ser::Serialize>(
     chip: Rc<C>,
 ) -> cursive::views::LinearLayout {
-    match chip.peripherals().i2c() {
-        Ok(i2c_peripherals) => crate::menu::capsule_popup::<C, _>(
-            crate::views::radio_group_with_null(Vec::from(i2c_peripherals), |siv, submit| {
-                on_bus_submit::<C>(siv, submit)
-            }),
-        ),
-        Err(_) => crate::menu::capsule_popup::<C, _>(crate::menu::no_support(PERIPHERAL)),
-    }
+    let i2c_peripherals = Vec::from(chip.peripherals().i2c().unwrap());
+    crate::menu::capsule_popup::<C, _>(
+        crate::views::radio_group_with_null(Vec::from(i2c_peripherals), |siv, submit| {
+            on_bus_submit::<C>(siv, submit)
+        }),
+    )
 }
 
 /// After choosing an I2C, go to the Acceleration Rate choice.
@@ -59,12 +51,13 @@ fn on_bus_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
     submit: &Option<Rc<<<C as parse::peripherals::Chip>::Peripherals as DefaultPeripherals>::I2c>>,
 ) {
-    siv.pop_layer();
     if let Some(data) = siv.user_data::<Data<C>>() {
         if let Some(bus) = submit {
             siv.add_layer(accel_rate_popup::<C>(Rc::clone(bus)));
         } else {
             data.platform.remove_lsm303agr();
+            let chip = Rc::clone(&data.chip);
+            siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()));
         }
     }
 }
@@ -300,6 +293,7 @@ fn on_mag_range_submit<C: Chip + 'static + serde::Serialize>(
             mag_range,
         );
 
-        siv.add_layer(menu::capsules_menu::<C>())
+        let chip = Rc::clone(&data.chip);
+        siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()))
     }
 }

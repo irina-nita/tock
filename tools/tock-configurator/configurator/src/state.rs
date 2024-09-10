@@ -160,6 +160,7 @@ pub(crate) fn push_layer<
 }
 
 /// Initialize a board configuration session based on the submitted chip.
+#[cfg(not(test))]
 pub(crate) fn on_chip_submit(siv: &mut cursive::Cursive, submit: &items::SupportedChip) {
     match submit {
         items::SupportedChip::MicroBit => {
@@ -167,6 +168,25 @@ pub(crate) fn on_chip_submit(siv: &mut cursive::Cursive, submit: &items::Support
             siv.set_user_data::<Data<nrf52833::Chip>>(Data::new(nrf52833::Chip::new()));
 
             push_layer::<_, nrf52833::Chip>(siv, board_config_menu::<nrf52833::Chip>());
+        }
+    };
+}
+
+/// Initialize a board configuration session based on the submitted chip.
+/// Only for testing purposes.
+#[cfg(test)]
+pub(crate) fn on_chip_submit(siv: &mut cursive::Cursive, submit: &items::SupportedChip) {
+    match submit {
+        items::SupportedChip::MicroBit => {
+            // Initial user data.
+            siv.set_user_data::<Data<nrf52833::Chip>>(Data::new(nrf52833::Chip::new()));
+
+            push_layer::<_, nrf52833::Chip>(siv, board_config_menu::<nrf52833::Chip>());
+        }
+        items::SupportedChip::Mock => {
+            siv.set_user_data::<Data<mock::Chip>>(Data::new(mock::Chip::new()));
+
+            push_layer::<_, mock::Chip>(siv, board_config_menu::<mock::Chip>());
         }
     };
 }
@@ -199,7 +219,10 @@ pub(crate) fn on_config_submit<C: Chip + 'static + serde::ser::Serialize>(
     // For each one, we need to add a layer.
     if let Some(data) = siv.user_data::<Data<C>>() {
         match submit {
-            items::ConfigurationField::Capsules => push_layer::<_, C>(siv, capsules_menu::<C>()),
+            items::ConfigurationField::Capsules => {
+                let chip = Rc::clone(&data.chip);
+                push_layer::<_, C>(siv, capsules_menu::<C>(chip.supported_capsules()))
+            }
             items::ConfigurationField::KernelResources => {
                 push_layer::<_, C>(siv, kernel_resources_menu::<C>())
             }

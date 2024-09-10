@@ -6,7 +6,7 @@
 // Author: Darius Jipa <darius.jipa@oxidos.io>
 
 use crate::items::ToMenuItem;
-use crate::menu::{capsule_popup, checkbox_popup, no_support, pin_list_disabled};
+use crate::menu::{capsule_popup, checkbox_popup, pin_list_disabled};
 use crate::state::{on_exit_submit, on_quit_submit, Data, GpioMap, PinFunction};
 use crate::views;
 use cursive::views::{Checkbox, ListChild, ListView};
@@ -14,8 +14,6 @@ use parse::peripherals::{Chip, DefaultPeripherals, Gpio};
 use std::rc::Rc;
 
 use super::ConfigMenu;
-
-const PERIPHERAL: &str = "GPIO";
 
 #[derive(Debug)]
 pub(crate) struct GpioConfig;
@@ -25,19 +23,15 @@ impl ConfigMenu for GpioConfig {
     fn config<C: Chip + 'static + serde::ser::Serialize>(
         chip: Rc<C>,
     ) -> cursive::views::LinearLayout {
-        match chip.peripherals().gpio() {
-            // If we have at least one GPIO peripheral, we make a list with it.
-            Ok(list) => capsule_popup::<C, _>(views::select_menu(
-                Vec::from(list)
-                    .into_iter()
-                    .map(|elem| elem.to_menu_item())
-                    .collect(),
-                |siv, submit| on_gpio_capsule_submit::<C>(siv, Rc::clone(submit)),
-            )),
-            // If we don't have any GPIO peripheral, we show a popup
-            // with an error describing this.
-            Err(_) => capsule_popup::<C, _>(no_support(PERIPHERAL)),
-        }
+        let gpio_peripherals = Vec::from(chip.peripherals().gpio().unwrap());
+        // If we have at least one GPIO peripheral, we make a list with it.
+        capsule_popup::<C, _>(views::select_menu(
+            Vec::from(gpio_peripherals)
+                .into_iter()
+                .map(|elem| elem.to_menu_item())
+                .collect(),
+            |siv, submit| on_gpio_capsule_submit::<C>(siv, Rc::clone(submit)),
+        ))
     }
 }
 
@@ -47,12 +41,11 @@ fn on_gpio_capsule_submit<C: Chip + 'static + serde::Serialize>(
     submit: Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
 ) {
     siv.pop_layer();
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        // This never panics because the GPIO will always exist.
-        let pin_list = data.gpio(&submit).unwrap().pins().clone();
+    let data = siv.user_data::<Data<C>>().unwrap();
+    // This never panics because the GPIO will always exist.
+    let pin_list = data.gpio(&submit).unwrap().pins().clone();
 
-        siv.add_layer(gpio_pins_popup::<C>(submit, pin_list));
-    }
+    siv.add_layer(gpio_pins_popup::<C>(submit, pin_list));
 }
 
 /// Menu with a list of the pins from the selected GPIO.
@@ -90,45 +83,44 @@ fn on_gpio_pin_submit<C: Chip + 'static + serde::Serialize>(
         });
     });
 
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        // The newly selected pins and the newly removed pins by the user.
-        let mut selected_pins = Vec::new();
+    let data = siv.user_data::<Data<C>>().unwrap();
+    // The newly selected pins and the newly removed pins by the user.
+    let mut selected_pins = Vec::new();
 
-        if let Some(pins) = gpio.pins() {
-            pins.as_ref().iter().for_each(|pin| {
-                // Convert from label to PinId.
-                selected_pins_labels
-                    .contains(&format!("{}", pin))
-                    .then(|| selected_pins.push(*pin));
-            });
-        }
-
-        // Create a list with all the previously selected pins that
-        // are now unselected.
-        let mut unselected_pins = Vec::new();
-        for (pin, pin_function) in data.gpio(&gpio).unwrap().pins() {
-            if *pin_function == PinFunction::Gpio && !selected_pins.contains(pin) {
-                unselected_pins.push(*pin);
-            }
-        }
-
-        // For each previously selected pin that got unselected,
-        // update its status in the internal configurator data.
-        unselected_pins.iter().for_each(|pin| {
-            data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::None);
+    if let Some(pins) = gpio.pins() {
+        pins.as_ref().iter().for_each(|pin| {
+            // Convert from label to PinId.
+            selected_pins_labels
+                .contains(&format!("{}", pin))
+                .then(|| selected_pins.push(*pin));
         });
+    }
 
-        // For each selected pin, update its status in the internal
-        // configurator data.
-        selected_pins.iter().for_each(|pin| {
-            data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::Gpio);
-        });
-
-        if selected_pins.is_empty() {
-            data.platform.remove_gpio();
-        } else {
-            data.platform.update_gpio(selected_pins);
+    // Create a list with all the previously selected pins that
+    // are now unselected.
+    let mut unselected_pins = Vec::new();
+    for (pin, pin_function) in data.gpio(&gpio).unwrap().pins() {
+        if *pin_function == PinFunction::Gpio && !selected_pins.contains(pin) {
+            unselected_pins.push(*pin);
         }
+    }
+
+    // For each previously selected pin that got unselected,
+    // update its status in the internal configurator data.
+    unselected_pins.iter().for_each(|pin| {
+        data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::None);
+    });
+
+    // For each selected pin, update its status in the internal
+    // configurator data.
+    selected_pins.iter().for_each(|pin| {
+        data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::Gpio);
+    });
+
+    if selected_pins.is_empty() {
+        data.platform.remove_gpio();
+    } else {
+        data.platform.update_gpio(selected_pins);
     }
 
     if quit {

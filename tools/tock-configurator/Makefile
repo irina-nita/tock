@@ -8,8 +8,8 @@
 PROFRAWS := $(wildcard *.profraw configurator/*.profraw parse/*.profraw parse-macros/*.profraw generator/*.profraw)
 
 # The following variables need to be manually set to get the coverage report.
-TOCK_CONFIGURATOR_MAIN := "tock_configurator-aee16cd6508bde04"
-TOCK_CONFIGURATOR_LIB := "tock_configurator-66fa8e09fafab95b"
+TOCK_CONFIGURATOR_MAIN := "tock_configurator-6b8185b56fa4ca3b"
+TOCK_CONFIGURATOR_LIB := "tock_configurator-7c89136d1e81113c"
 TOCK_PARSE := "parse-ac7aafe11dcb2860"
 TOCK_PARSE_MACROS := "parse_macros-897eb3cd92805239"
 TOCK_GENERATOR := "tock_generator-fc60c49b462360a9"
@@ -35,6 +35,12 @@ coverage:
     -output-dir=html -format=html --ignore-filename-regex=‘/.cargo/registry’ \
     --ignore-filename-regex=".*/.cargo/.*"\
     --ignore-filename-regex="rustc/.*"\
+    --ignore-filename-regex="generator/.*"\
+    --ignore-filename-regex="parse/.*"\
+    --ignore-filename-regex="parse-macros/.*"\
+    --ignore-filename-regex="main.rs"\
+    --ignore-filename-regex="test.rs"\
+    --ignore-filename-regex="chips/.*"\
     --instr-profile=default.profdata \
     --object target/debug/deps/$(TOCK_CONFIGURATOR_MAIN) \
     --object target/debug/deps/$(TOCK_CONFIGURATOR_LIB) \

@@ -13,8 +13,6 @@ use cursive::views::{Dialog, EditView, LinearLayout};
 use parse::peripherals::DefaultPeripherals;
 use std::rc::Rc;
 
-const PERIPHERAL: &str = "UART";
-
 /// Menu for configuring the Console capsule.
 pub fn config<C: Chip + 'static + serde::Serialize>(
     chip: Rc<C>,
@@ -26,32 +24,26 @@ pub fn config<C: Chip + 'static + serde::Serialize>(
     match previous_state {
         // If there isn't a Console already configured, we switch to another menu.
         None => config_none(chip),
-        Some(inner) => match chip.peripherals().uart() {
+        Some(inner) => {
+            let uart_peripherals = Vec::from(chip.peripherals().uart().unwrap());
             // If we have at least one UART peripheral, we make a list with it.
-            Ok(uart_peripherals) => {
-                capsule_popup::<C, _>(crate::views::radio_group_with_null_known(
-                    Vec::from(uart_peripherals),
-                    move |siv, submit| on_uart_submit::<C>(siv, submit, inner.1),
-                    inner.0,
-                ))
-            }
-            // If we don't have any UART peripheral, we show a popup
-            // with an error describing this.
-            Err(_) => capsule_popup::<C, _>(crate::menu::no_support(PERIPHERAL)),
+            capsule_popup::<C, _>(crate::views::radio_group_with_null_known(
+                uart_peripherals,
+                move |siv, submit| on_uart_submit::<C>(siv, submit, inner.1),
+                inner.0,
+            ))
         },
     }
 }
 
 /// Menu for configuring the Console capsule when none was configured before.
 fn config_none<C: Chip + 'static + serde::ser::Serialize>(chip: Rc<C>) -> LinearLayout {
-    match chip.peripherals().uart() {
-        Ok(uart_peripherals) => crate::menu::capsule_popup::<C, _>(
-            crate::views::radio_group_with_null(Vec::from(uart_peripherals), |siv, submit| {
-                on_uart_submit::<C>(siv, submit, 112500)
-            }),
-        ),
-        Err(_) => crate::menu::capsule_popup::<C, _>(crate::menu::no_support(PERIPHERAL)),
-    }
+    let uart_peripherals = Vec::from(chip.peripherals().uart().unwrap());
+    crate::menu::capsule_popup::<C, _>(
+        crate::views::radio_group_with_null(Vec::from(uart_peripherals), |siv, submit| {
+            on_uart_submit::<C>(siv, submit, 112500)
+        }),
+    )
 }
 
 /// Initialize a board configuration session based on the submitted chip.
@@ -60,12 +52,11 @@ fn on_uart_submit<C: Chip + 'static + serde::ser::Serialize>(
     submit: &Option<Rc<<C::Peripherals as DefaultPeripherals>::Uart>>,
     default_baud_rate: usize,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        if let Some(uart) = submit {
-            siv.add_layer(baud_rate_popup::<C>(Rc::clone(uart), default_baud_rate));
-        } else {
-            data.platform.remove_console();
-        }
+    let data = siv.user_data::<Data<C>>().unwrap();
+    if let Some(uart) = submit {
+        siv.add_layer(baud_rate_popup::<C>(Rc::clone(uart), default_baud_rate));
+    } else {
+        data.platform.remove_console();
     }
 }
 
@@ -96,17 +87,15 @@ fn on_baud_submit<C: Chip + 'static + serde::Serialize>(
     uart: Rc<<C::Peripherals as DefaultPeripherals>::Uart>,
     baud_rate_str: &str,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        let baud_rate = if baud_rate_str.is_empty() {
-            Ok(115200)
-        } else {
-            baud_rate_str.parse::<usize>()
-        };
+    let data = siv.user_data::<Data<C>>().unwrap();
+    let baud_rate = if baud_rate_str.is_empty() {
+        Ok(115200)
+    } else {
+        baud_rate_str.parse::<usize>()
+    };
 
-        if let Ok(br) = baud_rate {
-            data.platform.update_console(Rc::clone(&uart), br);
-        }
-
-        siv.pop_layer();
+    if let Ok(br) = baud_rate {
+        data.platform.update_console(Rc::clone(&uart), br);
     }
+    siv.pop_layer();
 }

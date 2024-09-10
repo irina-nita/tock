@@ -7,7 +7,7 @@
 
 use crate::Peripherals;
 use common::cortex_m4::Systick;
-use parse::{Component, Ident, config::Index};
+use parse::{config::Index, Component, Ident};
 use quote::{format_ident, quote};
 use std::rc::Rc;
 
@@ -96,6 +96,6 @@ impl parse::Chip for Chip {
     }
 
     fn supported_capsules(&self) -> Vec<parse::config::Index> {
-        vec![Index::I2C] 
+        vec![Index::ALARM, Index::SPI, Index::I2C, Index::BLE, Index::FLASH, Index::LSM303AGR, Index::CONSOLE, Index::TEMPERATURE, Index::RNG, Index::GPIO]
     }
 }
