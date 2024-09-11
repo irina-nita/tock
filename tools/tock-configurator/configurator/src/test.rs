@@ -439,6 +439,9 @@ fn lsm303agr() {
     s.hit_keystroke(Key::Enter);
     s.hit_keystroke(Key::Enter);
     s.hit_keystroke(Key::Enter);
+
+    s.hit_keystroke(Key::Enter);
+    s.dump_debug();
     s.hit_keystroke(Key::Enter);
 
     tabs_and_enters(&mut s, 2, 1);

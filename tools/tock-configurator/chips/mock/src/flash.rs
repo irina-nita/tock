@@ -20,7 +20,17 @@ pub enum FlashType {
 pub struct Flash(FlashType);
 
 impl parse::Component for Flash {}
-impl parse::Flash for Flash {}
+impl parse::Flash for Flash {
+    type Page = parse::NoSupport;
+
+    fn page() -> Self::Page {
+        parse::NoSupport {}
+    }
+
+    fn pages_per_bank() -> proc_macro2::TokenStream {
+        unimplemented!()
+    }
+}
 
 impl std::fmt::Display for Flash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

@@ -20,6 +20,7 @@ pub enum BleType {
 pub struct Ble(BleType);
 
 impl parse::Component for Ble {}
+
 impl parse::BleAdvertisement for Ble {}
 
 impl std::fmt::Display for Ble {

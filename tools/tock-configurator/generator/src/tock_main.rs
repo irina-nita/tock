@@ -108,8 +108,10 @@ impl<C: Chip + 'static> TockMain<C> {
             pub const NUM_PROCS: usize = #process_count;
             const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy = capsules_system::process_policies::PanicFaultPolicy {};
             static mut PROCESSES: [Option<&'static dyn kernel::process::Process>; NUM_PROCS] = [None; NUM_PROCS];
-            static mut PROCESS_PRINTER: Option<&'static capsules_system::process_printer::ProcessPrinterText> = None;
-            static mut CHIP: Option<&'static #chip_type> = None;
+            static mut PROCESS_PRINTER: Option<
+                &'static capsules_system::process_printer::ProcessPrinterText,
+            > = None;
+            static mut CHIP: Option<&#chip_type> = None;
 
             #[no_mangle]
             #[link_section = ".stack_buffer"]
@@ -138,9 +140,11 @@ impl<C: Chip + 'static> TockMain<C> {
         // Inject the custom code for a chip/arch? Like enabling interrupts?
         Ok(quote! {
             unsafe fn setup() -> (
-            &'static kernel::Kernel,
-            #platform_ty,
-            &'static #chip_ty) {
+                &'static kernel::Kernel,
+                #platform_ty,
+                &'static #chip_ty
+            ) {
+                let memory_allocation_cap = kernel::create_capability!(kernel::capabilities::MemoryAllocationCapability);
                 let board_kernel = kernel::static_init!(kernel::Kernel, kernel::Kernel::new(&*core::ptr::addr_of!(PROCESSES)));
                 #(#initializations)*
 
@@ -208,7 +212,7 @@ impl<C: Chip + 'static> TockMain<C> {
             struct #board_ty {
                 #(#capsules_identifiers: &'static #capsules_types,)*
                 #scheduler_id: &'static #scheduler_ty,
-                #scheduler_timer_id: #scheduler_timer_type
+                #scheduler_timer_id: #scheduler_timer_type,
             }
 
             impl SyscallDriverLookup for #board_ty {

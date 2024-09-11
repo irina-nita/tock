@@ -352,8 +352,32 @@ pub(crate) fn on_capsule_submit<C: Chip + 'static + serde::ser::Serialize>(
         config::Index::GPIO => {
             push_layer::<_, C>(siv, crate::capsule::gpio::GpioConfig::config(chip))
         }
+        config::Index::LED => push_layer::<_, C>(siv, crate::capsule::led::LedConfig::config(chip)),
+        config::Index::HMAC => {
+            push_layer::<_, C>(siv, crate::capsule::hmac::HmacConfig::config(chip))
+        }
+        config::Index::AES => push_layer::<_, C>(siv, crate::capsule::aes::AesConfig::config(chip)),
+        config::Index::KV_DRIVER => {
+            push_layer::<_, C>(siv, crate::capsule::kv_driver::KvDriverConfig::config(chip))
+        }
         _ => unreachable!(),
     }
+}
+
+/// Give the next prompt from the GPIO capsule.
+pub(crate) fn on_gpio_submit<
+    C: Chip + 'static + serde::Serialize,
+    F: 'static
+        + Fn(
+            Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
+        ) -> cursive::views::LinearLayout,
+>(
+    siv: &mut cursive::Cursive,
+    submit: Rc<<<C as Chip>::Peripherals as DefaultPeripherals>::Gpio>,
+    popup: F,
+) {
+    siv.pop_layer();
+    siv.add_layer(popup(submit));
 }
 
 /// Exit the current window and go back to the previous one.

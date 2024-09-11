@@ -7,6 +7,7 @@
 
 use parse_macros::capsules_config;
 
+use crate::LedType;
 use crate::{DefaultPeripherals, SchedulerType, SyscallFilterType};
 use crate::{Lsm303AccelDataRate, Lsm303MagnetoDataRate, Lsm303Range, Lsm303Scale};
 use std::{collections::HashMap, num::NonZeroUsize, rc::Rc};
@@ -17,6 +18,7 @@ capsules_config!(
     // The keys and values enums for the capsules map.
     {
         ALARM => Alarm { timer: Rc<P::Timer> },
+        LED => Led { led_type: LedType, pins: Vec<<P::Gpio as crate::Gpio>::PinId> },
         SPI => Spi { spi: Rc<P::Spi> },
         I2C => I2c { i2c: Rc<P::I2c> },
         BLE => BleRadio { ble: Rc<P::BleAdvertisement>, timer: Rc<P::Timer> },
@@ -32,7 +34,10 @@ capsules_config!(
         CONSOLE => Console { uart: Rc<P::Uart>, baud_rate: usize},
         TEMPERATURE => Temperature { temp: Rc<P::Temperature> },
         RNG => Rng { rng: Rc<P::Rng> },
-        GPIO => Gpio { pins: Vec<<P::Gpio as crate::Gpio>::PinId> }
+        GPIO => Gpio { pins: Vec<<P::Gpio as crate::Gpio>::PinId> },
+        HMAC => Hmac { hmac: Rc<P::Hmac>, length: usize },
+        KV_DRIVER => KvDriver { flash: Rc<P::Flash> },
+        AES => Aes { aes: Rc<P::Aes>, number_of_blocks: usize },
     }
 );
 
@@ -157,6 +162,36 @@ impl<P: DefaultPeripherals> Configuration<P> {
         self.capsules.insert(Index::GPIO, Capsule::Gpio { pins });
     }
 
+    pub fn update_led(&mut self, led_type: LedType, pins: Vec<<P::Gpio as crate::Gpio>::PinId>) {
+        self.capsules.insert(
+            Index::LED,
+            Capsule::Led {
+                led_type: led_type,
+                pins,
+            },
+        );
+    }
+
+    pub fn update_hmac(&mut self, hmac: Rc<P::Hmac>, length: usize) {
+        self.capsules
+            .insert(Index::HMAC, Capsule::Hmac { hmac, length });
+    }
+
+    pub fn update_aes(&mut self, aes: Rc<P::Aes>, number_of_blocks: usize) {
+        self.capsules.insert(
+            Index::AES,
+            Capsule::Aes {
+                aes,
+                number_of_blocks,
+            },
+        );
+    }
+
+    pub fn update_kv_driver(&mut self, flash: Rc<P::Flash>) {
+        self.capsules
+            .insert(Index::KV_DRIVER, Capsule::KvDriver { flash });
+    }
+
     /// Update the scheduler configuration.
     pub fn update_scheduler(&mut self, scheduler_type: SchedulerType) {
         self.scheduler = scheduler_type;
@@ -226,5 +261,22 @@ impl<P: DefaultPeripherals> Configuration<P> {
     /// Remove the rng configuration.
     pub fn remove_rng(&mut self) {
         self.capsules.remove(&Index::RNG);
+    }
+
+    /// Remove the LED configuration.
+    pub fn remove_led(&mut self) {
+        self.capsules.remove(&Index::LED);
+    }
+
+    pub fn remove_hmac(&mut self) {
+        self.capsules.remove(&Index::HMAC);
+    }
+
+    pub fn remove_kv_driver(&mut self) {
+        self.capsules.remove(&Index::KV_DRIVER);
+    }
+
+    pub fn remove_aes(&mut self) {
+        self.capsules.remove(&Index::AES);
     }
 }

@@ -96,6 +96,6 @@ impl parse::Chip for Chip {
     }
 
     fn supported_capsules(&self) -> Vec<parse::config::Index> {
-        vec![Index::I2C] 
+        vec![Index::I2C, Index::LSM303AGR] 
     }
 }

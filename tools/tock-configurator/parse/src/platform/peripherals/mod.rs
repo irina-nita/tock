@@ -37,3 +37,9 @@ pub use temp::*;
 
 pub mod rng;
 pub use rng::*;
+
+pub mod hmac;
+pub use hmac::*;
+
+pub mod aes;
+pub use aes::*;

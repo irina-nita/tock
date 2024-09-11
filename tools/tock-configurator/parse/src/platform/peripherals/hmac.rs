@@ -5,9 +5,8 @@
 // Author: Irina Nita <irina.nita@oxidos.io>
 // Author: Darius Jipa <darius.jipa@oxidos.io>
 
-#[macro_export]
-macro_rules! static_ident {
-    ($ident: tt) => {{
-        ::once_cell::sync::Lazy::new(|| $ident.to_string())
-    }};
-}
+use super::NoSupport;
+
+pub trait Hmac: crate::Component + std::fmt::Debug + std::fmt::Display {}
+
+impl Hmac for NoSupport {}

@@ -5,6 +5,8 @@
 // Author: Irina Nita <irina.nita@oxidos.io>
 // Author: Darius Jipa <darius.jipa@oxidos.io>
 
+use parse::NoSupport;
+
 use crate::{timer, uart, FlashType, TemperatureType, UartType};
 use std::rc::Rc;
 
@@ -70,6 +72,8 @@ impl parse::DefaultPeripherals for Peripherals {
     type BleAdvertisement = crate::Ble;
     type Temperature = crate::Temperature;
     type Flash = crate::Flash;
+    type Aes = NoSupport;
+    type Hmac = NoSupport;
 
     fn uart(&self) -> Result<&[Rc<Self::Uart>], parse::Error> {
         Ok(&self.uart)
