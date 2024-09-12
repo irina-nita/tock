@@ -12,7 +12,6 @@ use crate::views;
 use cursive::views::{Checkbox, ListChild, ListView};
 use cursive::Cursive;
 use parse::peripherals::{Chip, DefaultPeripherals, Gpio};
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::ConfigMenu;
@@ -77,11 +76,9 @@ fn on_led_type_submit<C: Chip + 'static + serde::Serialize>(
     gpio: Rc<<C::Peripherals as DefaultPeripherals>::Gpio>,
     led_type: parse::capsules::led::LedType,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        //data.current_view_type = ViewType::LedPins;
-        let pin_list = data.gpio(&gpio).unwrap().pins().clone();
-        crate::state::push_layer::<_, C>(siv, led_pins_popup::<C>(gpio, pin_list, led_type));
-    }
+    let data = siv.user_data::<Data<C>>().unwrap();
+    let pin_list = data.gpio(&gpio).unwrap().pins().clone();
+    crate::state::push_layer::<_, C>(siv, led_pins_popup::<C>(gpio, pin_list, led_type));
 }
 
 fn on_led_pin_submit<C: Chip + 'static + serde::Serialize>(
@@ -90,49 +87,52 @@ fn on_led_pin_submit<C: Chip + 'static + serde::Serialize>(
     led_type: parse::capsules::led::LedType,
     quit: bool,
 ) {
-    let pin_names = RefCell::new(Vec::new());
-    siv.call_on_name("led_pins", |list: &mut ListView| {
-        for child in list.children() {
+    let mut selected_pins_labels = Vec::new();
+    siv.call_on_name("led_pins", |list_view: &mut ListView| {
+        list_view.children().iter().for_each(|child| {
             if let ListChild::Row(label, view) = child {
-                if let Some(check) = view.downcast_ref::<Checkbox>() {
-                    if check.is_checked() {
-                        pin_names.borrow_mut().push(label.clone());
-                    }
-                }
+                view.downcast_ref::<Checkbox>().map(|c| {
+                    c.is_checked()
+                        .then(|| selected_pins_labels.push(label.clone()))
+                });
             }
-        }
+        })
     });
 
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        let mut selected_pins = Vec::new();
-        if let Some(pin_list) = gpio.pins() {
-            for pin in pin_list.as_ref() {
-                if pin_names.borrow().contains(&format!("{:?}", pin)) {
-                    selected_pins.push(*pin);
-                }
-            }
-        }
+    let data = siv.user_data::<Data<C>>().unwrap();
+    let mut selected_pins = Vec::new();
+    if let Some(pins) = gpio.pins() {
+        pins.as_ref().iter().for_each(|pin| {
+            // Convert from label to PinId.
+            selected_pins_labels
+                .contains(&format!("{}", pin))
+                .then(|| selected_pins.push(*pin));
+        });
+    }
 
-        let mut unselected_pins = Vec::new();
-        for (pin, pin_function) in data.gpio(&gpio).unwrap().pins() {
-            if *pin_function == PinFunction::Led && !selected_pins.contains(pin) {
-                unselected_pins.push(*pin);
-            }
+    let mut unselected_pins = Vec::new();
+    for (pin, pin_function) in data.gpio(&gpio).unwrap().pins() {
+        if *pin_function == PinFunction::Led && !selected_pins.contains(pin) {
+            unselected_pins.push(*pin);
         }
+    }
 
-        for pin in selected_pins.iter() {
-            data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::Led);
-        }
+    // For each previously selected pin that got unselected,
+    // update its status in the internal configurator data.
+    unselected_pins.iter().for_each(|pin| {
+        data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::None);
+    });
 
-        for pin in unselected_pins.iter() {
-            data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::None);
-        }
+    // For each selected pin, update its status in the internal
+    // configurator data.
+    selected_pins.iter().for_each(|pin| {
+        data.change_pin_status(Rc::clone(&gpio), *pin, PinFunction::Led);
+    });
 
-        if selected_pins.is_empty() {
-            data.platform.remove_led();
-        } else {
-            data.platform.update_led(led_type, selected_pins);
-        }
+    if selected_pins.is_empty() {
+        data.platform.remove_led();
+    } else {
+        data.platform.update_led(led_type, selected_pins);
     }
 
     if quit {

@@ -9,12 +9,12 @@ use parse::constants::PERIPHERALS;
 use parse::peripheral;
 use quote::quote;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum TemperatureType {
     Temp,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[peripheral(serde, ident = ".nrf52.temp")]
 pub struct Temperature(TemperatureType);
 

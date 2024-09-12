@@ -6,7 +6,7 @@
 // Author: Darius Jipa <darius.jipa@oxidos.io>
 
 /// Types of ssyscall filters available for Tock platforms.
-#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone, Copy, PartialEq)]
 pub enum SyscallFilterType {
     #[default]
     None,

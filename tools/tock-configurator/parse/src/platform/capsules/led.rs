@@ -12,7 +12,7 @@ use std::rc::Rc;
 
 /// Types of LEDs. In OxidOS, these are the structs that actually
 /// wrap the low level Pin driver.
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum LedType {
     /// LEDs in which on is when GPIO is high.
     LedHigh,

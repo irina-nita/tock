@@ -79,8 +79,8 @@ fn on_gpio_pin_submit<C: Chip + 'static + serde::Serialize>(
                     c.is_checked()
                         .then(|| selected_pins_labels.push(label.clone()))
                 });
-            };
-        });
+            }
+        })
     });
 
     let data = siv.user_data::<Data<C>>().unwrap();

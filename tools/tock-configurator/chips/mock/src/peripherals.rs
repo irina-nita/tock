@@ -5,8 +5,6 @@
 // Author: Irina Nita <irina.nita@oxidos.io>
 // Author: Darius Jipa <darius.jipa@oxidos.io>
 
-use parse::NoSupport;
-
 use crate::{timer, uart, FlashType, TemperatureType, UartType};
 use std::rc::Rc;
 
@@ -22,6 +20,8 @@ pub struct Peripherals {
     gpio: [Rc<crate::gpio::Gpio>; 1],
     flash: [Rc<crate::flash::Flash>; 1],
     spi: [Rc<crate::spi::Spi>; 1],
+    aes: [Rc<crate::aes::Aes>; 1],
+    hmac: [Rc<crate::hmac::Hmac>; 1],
 }
 
 impl Peripherals {
@@ -37,7 +37,9 @@ impl Peripherals {
             twi: [Rc::new(crate::Twi::new())],
             flash: [Rc::new(crate::Flash::new(FlashType::Flash0))],
             gpio: [Rc::new(crate::gpio::Gpio::new())],
-            spi: [Rc::new(crate::spi::Spi::new())]
+            spi: [Rc::new(crate::spi::Spi::new())],
+            aes: [Rc::new(crate::aes::Aes::new())],
+            hmac: [Rc::new(crate::hmac::Hmac::new())],
         }
     }
 }
@@ -72,8 +74,8 @@ impl parse::DefaultPeripherals for Peripherals {
     type BleAdvertisement = crate::Ble;
     type Temperature = crate::Temperature;
     type Flash = crate::Flash;
-    type Aes = NoSupport;
-    type Hmac = NoSupport;
+    type Aes = crate::Aes;
+    type Hmac = crate::Hmac;
 
     fn uart(&self) -> Result<&[Rc<Self::Uart>], parse::Error> {
         Ok(&self.uart)
@@ -109,5 +111,13 @@ impl parse::DefaultPeripherals for Peripherals {
 
     fn spi(&self) -> Result<&[Rc<Self::Spi>], parse::Error> {
         Ok(&self.spi)
+    }
+
+    fn aes(&self) -> Result<&[Rc<Self::Aes>], parse::Error> {
+        Ok(&self.aes)
+    }
+
+    fn hmac(&self) -> Result<&[Rc<Self::Hmac>], parse::Error> {
+        Ok(&self.hmac)
     }
 }

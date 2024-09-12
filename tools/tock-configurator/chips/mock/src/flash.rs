@@ -10,12 +10,12 @@
 use parse::constants::PERIPHERALS;
 use parse::peripheral;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum FlashType {
     Flash0,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[peripheral(serde, ident = "flash")]
 pub struct Flash(FlashType);
 

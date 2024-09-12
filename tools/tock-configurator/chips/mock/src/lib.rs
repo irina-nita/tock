@@ -11,10 +11,12 @@
 //  would be a better candidate. The documentation on the `chips` directory
 //  provided better insight on how these JSONs could look like.
 
+pub mod aes;
 pub mod ble;
 pub mod chip;
 pub mod flash;
 pub mod gpio;
+pub mod hmac;
 pub mod peripherals;
 pub mod rng;
 pub mod spi;
@@ -23,10 +25,12 @@ pub mod timer;
 pub mod twi;
 pub mod uart;
 
+pub use aes::*;
 pub use ble::*;
 pub use chip::*;
 pub use flash::*;
 pub use gpio::*;
+pub use hmac::*;
 pub use peripherals::*;
 pub use rng::*;
 pub use spi::*;

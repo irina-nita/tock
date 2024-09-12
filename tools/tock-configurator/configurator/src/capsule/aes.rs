@@ -13,44 +13,64 @@ use cursive::view::Nameable;
 use cursive::views::{Dialog, EditView};
 use parse::peripherals::{Chip, DefaultPeripherals};
 
-use super::ConfigMenu;
-#[derive(Debug)]
-pub(crate) struct AesConfig;
-
-impl ConfigMenu for AesConfig {
-    /// Menu for configuring the hmac capsule.
-    fn config<C: Chip + 'static + serde::ser::Serialize>(
-        chip: Rc<C>,
-    ) -> cursive::views::LinearLayout {
-        let aes_peripherals = Vec::from(chip.peripherals().aes().unwrap());
-        capsule_popup::<C, _>(crate::views::radio_group_with_null(
-            Vec::from(aes_peripherals),
-            on_aes_submit::<C>,
-        ))
+/// Menu for configuring the AES capsule.
+pub fn config<C: Chip + 'static + serde::Serialize>(
+    chip: Rc<C>,
+    choice: Option<(
+        Rc<<<C as parse::peripherals::Chip>::Peripherals as DefaultPeripherals>::Aes>,
+        usize
+    )>,
+) -> cursive::views::LinearLayout {
+    match choice {
+        // If there isn't an AES already configured, we switch to another menu.
+        None => config_none(chip),
+        Some(inner) => 
+        {
+            let aes_peripherals = Vec::from(chip.peripherals().aes().unwrap());
+            // If we have at least one AES peripheral, we make a list with it.
+            capsule_popup::<C, _>(crate::views::radio_group_with_null_known(
+                Vec::from(aes_peripherals),
+                move |siv, submit| on_aes_submit::<C>(siv, submit, inner.1),
+                inner.0,
+            ))
+        }
     }
+}
+
+/// Menu for configuring the AES capsule when none was configured before.
+fn config_none<C: Chip + 'static + serde::ser::Serialize>(
+    chip: Rc<C>,
+) -> cursive::views::LinearLayout {
+    let aes_peripherals = Vec::from(chip.peripherals().aes().unwrap());
+    capsule_popup::<C, _>(crate::views::radio_group_with_null(
+        Vec::from(aes_peripherals),
+        |siv, submit| on_aes_submit::<C>(siv, submit, 7),
+    ))
 }
 
 /// Initialize a board configuration session based on the submitted chip.
 fn on_aes_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
     submit: &Option<Rc<<C::Peripherals as DefaultPeripherals>::Aes>>,
+    default_crypt_size: usize,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        if let Some(aes) = submit {
-            siv.add_layer(crypt_size_popup::<C>(aes.clone()));
-        } else {
-            data.platform.remove_aes();
-        }
+    let data = siv.user_data::<Data<C>>().unwrap();
+    if let Some(aes) = submit {
+        siv.add_layer(crypt_size_popup::<C>(aes.clone(), default_crypt_size));
+    } else {
+        data.platform.remove_aes();
     }
 }
 
 /// Menu for configuring the crypt size for the aes.
 fn crypt_size_popup<C: Chip + 'static + serde::ser::Serialize>(
     aes: Rc<<C::Peripherals as DefaultPeripherals>::Aes>,
+    default_value: usize,
 ) -> cursive::views::Dialog {
     let aes_clone = aes.clone();
     Dialog::around(
         EditView::new()
+            .content(format!("{default_value}"))
             .on_submit(move |siv, name| on_crypt_size_submit::<C>(siv, name, aes.clone()))
             .with_name("crypt_size"),
     )
@@ -69,17 +89,16 @@ fn on_crypt_size_submit<C: Chip + 'static + serde::Serialize>(
     name: &str,
     aes: Rc<<C::Peripherals as DefaultPeripherals>::Aes>,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        let crypt_size = if name.is_empty() {
-            Ok(7)
-        } else {
-            name.parse::<usize>()
-        };
+    let data = siv.user_data::<Data<C>>().unwrap();
+    let crypt_size = if name.is_empty() {
+        Ok(7)
+    } else {
+        name.parse::<usize>()
+    };
 
-        if let Ok(crypt_size) = crypt_size {
-            data.platform.update_aes(aes.clone(), crypt_size);
-        }
-
-        siv.pop_layer();
+    if let Ok(crypt_size) = crypt_size {
+        data.platform.update_aes(aes.clone(), crypt_size);
     }
+
+    siv.pop_layer();
 }

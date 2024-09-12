@@ -10,7 +10,7 @@ use quote::quote;
 use std::rc::Rc;
 
 /// The types of schedulers supported by Tock.
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, PartialEq, Debug)]
 pub enum SchedulerType {
     #[default]
     Cooperative,

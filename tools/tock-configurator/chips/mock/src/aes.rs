@@ -11,14 +11,14 @@ use parse::constants::PERIPHERALS;
 use parse::peripheral;
 
 #[derive(Debug, PartialEq)]
-#[peripheral(serde, ident = "spi")]
-pub struct Spi {}
+#[peripheral(serde, ident = "aes")]
+pub struct Aes {}
 
-impl parse::Spi for Spi {}
-impl parse::Component for Spi {}
+impl parse::Aes for Aes {}
+impl parse::Component for Aes {}
 
-impl std::fmt::Display for Spi {
+impl std::fmt::Display for Aes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "spi")
+        write!(f, "aes")
     }
 }

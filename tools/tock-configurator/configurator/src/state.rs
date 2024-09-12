@@ -354,11 +354,27 @@ pub(crate) fn on_capsule_submit<C: Chip + 'static + serde::ser::Serialize>(
         }
         config::Index::LED => push_layer::<_, C>(siv, crate::capsule::led::LedConfig::config(chip)),
         config::Index::HMAC => {
-            push_layer::<_, C>(siv, crate::capsule::hmac::HmacConfig::config(chip))
+            let choice = match data.platform.capsule(&config::Index::HMAC) {
+                Some(config::Capsule::Hmac { hmac, length }) => Some((Rc::clone(hmac), *length)),
+                _ => None,
+            };
+
+            push_layer::<_, C>(siv, crate::capsule::hmac::config(chip, choice))
         }
-        config::Index::AES => push_layer::<_, C>(siv, crate::capsule::aes::AesConfig::config(chip)),
+        config::Index::AES => {
+            let choice = match data.platform.capsule(&config::Index::AES) {
+                Some(config::Capsule::Aes { aes, number_of_blocks }) => Some((Rc::clone(aes), *number_of_blocks)),
+                _ => None,
+            };
+
+            push_layer::<_, C>(siv, crate::capsule::aes::config(chip, choice))
+        }
         config::Index::KV_DRIVER => {
-            push_layer::<_, C>(siv, crate::capsule::kv_driver::KvDriverConfig::config(chip))
+            let choice = match data.platform.capsule(&config::Index::KV_DRIVER) {
+                Some(config::Capsule::KvDriver { flash }) => Some(Rc::clone(flash)),
+                _ => None,
+            };
+            push_layer::<_, C>(siv, crate::capsule::kv_driver::config(chip, choice))
         }
         _ => unreachable!(),
     }

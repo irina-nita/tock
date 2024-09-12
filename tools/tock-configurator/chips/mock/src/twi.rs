@@ -10,7 +10,7 @@
 use parse::constants::PERIPHERALS;
 use parse::peripheral;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[peripheral(serde, ident = "twi")]
 pub struct Twi {}
 

@@ -9,12 +9,12 @@ use parse::constants::PERIPHERALS;
 use parse::peripheral;
 use quote::quote;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 pub enum RngType {
     Rng,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[peripheral(serde, ident = ".nrf52.trng")]
 pub struct Rng(RngType);
 

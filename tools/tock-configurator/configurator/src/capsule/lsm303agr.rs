@@ -51,14 +51,13 @@ fn on_bus_submit<C: Chip + 'static + serde::ser::Serialize>(
     siv: &mut cursive::Cursive,
     submit: &Option<Rc<<<C as parse::peripherals::Chip>::Peripherals as DefaultPeripherals>::I2c>>,
 ) {
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        if let Some(bus) = submit {
-            siv.add_layer(accel_rate_popup::<C>(Rc::clone(bus)));
-        } else {
-            data.platform.remove_lsm303agr();
-            let chip = Rc::clone(&data.chip);
-            siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()));
-        }
+    let data = siv.user_data::<Data<C>>().unwrap();
+    if let Some(bus) = submit {
+        siv.add_layer(accel_rate_popup::<C>(Rc::clone(bus)));
+    } else {
+        data.platform.remove_lsm303agr();
+        let chip = Rc::clone(&data.chip);
+        siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()));
     }
 }
 
@@ -281,19 +280,18 @@ fn on_mag_range_submit<C: Chip + 'static + serde::Serialize>(
     mag_range: parse::capsules::lsm303agr::Lsm303Range,
 ) {
     siv.pop_layer();
-    if let Some(data) = siv.user_data::<Data<C>>() {
-        data.platform.update_lsm303agr(
-            bus,
-            accel_rate,
-            false,
-            accel_scale,
-            false,
-            false,
-            mag_data_rate,
-            mag_range,
-        );
+    let data = siv.user_data::<Data<C>>().unwrap();
+    data.platform.update_lsm303agr(
+        bus,
+        accel_rate,
+        false,
+        accel_scale,
+        false,
+        false,
+        mag_data_rate,
+        mag_range,
+    );
 
-        let chip = Rc::clone(&data.chip);
-        siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()))
-    }
+    let chip = Rc::clone(&data.chip);
+    siv.add_layer(menu::capsules_menu::<C>(chip.supported_capsules()))
 }
