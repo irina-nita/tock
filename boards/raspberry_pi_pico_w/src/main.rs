@@ -46,11 +46,13 @@ type CYW4343xHw = capsules_extra::cyw4343::CYW4343x<
 >;
 
 type WifiDriver = capsules_extra::wifi::WifiDriver<'static, CYW4343xHw>;
+type EthernetDriver = capsules_extra::ethernet_tap::EthernetTapDriver<'static, CYW4343xHw>;
 
 /// Supported drivers by the platform
 pub struct RaspberryPiPicoW {
     base: raspberry_pi_pico::Platform,
     wifi: &'static WifiDriver,
+    ethernet: &'static EthernetDriver,
 }
 
 impl SyscallDriverLookup for RaspberryPiPicoW {
@@ -60,6 +62,7 @@ impl SyscallDriverLookup for RaspberryPiPicoW {
     {
         match driver_num {
             capsules_extra::wifi::DRIVER_NUM => f(Some(self.wifi)),
+            capsules_extra::ethernet_tap::DRIVER_NUM => f(Some(self.ethernet)),
             _ => self.base.with_driver(driver_num, f),
         }
     }
@@ -164,6 +167,23 @@ pub unsafe fn start() -> (
     )
     .finalize(components::wifi_component_static!(CYW4343xHw));
 
+    // Ethernet
+
+    let memory_allocation_cap = create_capability!(capabilities::MemoryAllocationCapability);
+    let grant = board_kernel.create_grant(
+        capsules_extra::ethernet_tap::DRIVER_NUM,
+        &memory_allocation_cap,
+    );
+
+    let tx_buffer = kernel::static_init!(
+        [u8; capsules_extra::ethernet_tap::MAX_MTU],
+        [0u8; capsules_extra::ethernet_tap::MAX_MTU]
+    );
+    let ethernet = kernel::static_init!(
+        EthernetDriver,
+        EthernetDriver::new(cyw4343_device, grant, tx_buffer)
+    );
+
     debug!("Initialization complete. Enter main loop");
 
     // These symbols are defined in the linker script.
@@ -199,7 +219,11 @@ pub unsafe fn start() -> (
         debug!("{:?}", err);
     });
 
-    let platform = RaspberryPiPicoW { base, wifi };
+    let platform = RaspberryPiPicoW {
+        base,
+        wifi,
+        ethernet,
+    };
 
     (board_kernel, platform, chip)
 }

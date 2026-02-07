@@ -5,33 +5,25 @@
 
 #![no_std]
 
-use capsules_core::i2c_master::I2CMasterDriver;
-use capsules_core::virtualizers::virtual_alarm::MuxAlarm;
-use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
+use capsules_core::virtualizers::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
 use capsules_extra::usb::cdc::CdcAcm;
 use enum_primitive::cast::FromPrimitive;
 use kernel::capabilities;
 use kernel::component::Component;
 use kernel::debug;
 use kernel::debug::PanicResources;
-use kernel::hil::gpio::Configure;
-use kernel::hil::gpio::FloatingState;
-use kernel::hil::i2c::I2CMaster;
 use kernel::hil::usb::Client;
 use kernel::platform::SyscallDriverLookup;
 use kernel::syscall::SyscallDriver;
 use kernel::utilities::single_thread_value::SingleThreadValue;
 use kernel::Kernel;
 use kernel::{create_capability, static_init};
-use rp2040::adc;
-use rp2040::adc::Adc;
 use rp2040::chip::{Rp2040, Rp2040DefaultPeripherals};
 use rp2040::clocks::RtcAuxiliaryClockSource;
 use rp2040::clocks::{AdcAuxiliaryClockSource, PeripheralAuxiliaryClockSource, PllClock};
 use rp2040::clocks::{ReferenceAuxiliaryClockSource, ReferenceClockSource};
 use rp2040::clocks::{SystemAuxiliaryClockSource, SystemClockSource, UsbAuxiliaryClockSource};
-use rp2040::gpio::{GpioFunction, RPGpio, RPGpioPin};
-use rp2040::i2c::I2c;
+use rp2040::gpio::{GpioFunction, RPGpio};
 use rp2040::resets::Peripheral;
 use rp2040::sysinfo;
 use rp2040::timer::RPTimer;
@@ -58,11 +50,6 @@ type ProcessPrinterInUse = capsules_system::process_printer::ProcessPrinterText;
 pub static PANIC_RESOURCES: SingleThreadValue<PanicResources<ChipHw, ProcessPrinterInUse>> =
     SingleThreadValue::new(PanicResources::new());
 
-type TemperatureRp2040Sensor = components::temperature_rp2040::TemperatureRp2040ComponentType<
-    capsules_core::virtualizers::virtual_adc::AdcDevice<'static, rp2040::adc::Adc<'static>>,
->;
-type TemperatureDriver = components::temperature::TemperatureComponentType<TemperatureRp2040Sensor>;
-
 pub type SchedulerInUse = components::sched::round_robin::RoundRobinComponentType;
 
 /// Base drivers for the Raspberry Pi Pico boards
@@ -74,10 +61,6 @@ pub struct Platform {
         'static,
         VirtualMuxAlarm<'static, rp2040::timer::RPTimer<'static>>,
     >,
-    gpio: &'static capsules_core::gpio::GPIO<'static, RPGpioPin<'static>>,
-    adc: &'static capsules_core::adc::AdcVirtualized<'static>,
-    temperature: &'static TemperatureDriver,
-    i2c: &'static capsules_core::i2c_master::I2CMasterDriver<'static, I2c<'static, 'static>>,
     date_time:
         &'static capsules_extra::date_time::DateTimeCapsule<'static, rp2040::rtc::Rtc<'static>>,
     console: &'static capsules_core::console::Console<'static>,
@@ -91,11 +74,7 @@ impl SyscallDriverLookup for Platform {
         match driver_num {
             capsules_core::console::DRIVER_NUM => f(Some(self.console)),
             capsules_core::alarm::DRIVER_NUM => f(Some(self.alarm)),
-            capsules_core::gpio::DRIVER_NUM => f(Some(self.gpio)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
-            capsules_core::adc::DRIVER_NUM => f(Some(self.adc)),
-            capsules_extra::temperature::DRIVER_NUM => f(Some(self.temperature)),
-            capsules_core::i2c_master::DRIVER_NUM => f(Some(self.i2c)),
             capsules_extra::date_time::DRIVER_NUM => f(Some(self.date_time)),
             _ => f(None),
         }
@@ -384,65 +363,6 @@ pub unsafe fn setup(
     )
     .finalize(components::debug_writer_component_static!());
 
-    let gpio = components::gpio::GpioComponent::new(
-        board_kernel,
-        capsules_core::gpio::DRIVER_NUM,
-        components::gpio_component_helper!(
-            RPGpioPin,
-            // Used for serial communication. Comment them in if you don't use serial.
-            // 0 => peripherals.pins.get_pin(RPGpio::GPIO0),
-            // 1 => peripherals.pins.get_pin(RPGpio::GPIO1),
-            2 => peripherals.pins.get_pin(RPGpio::GPIO2),
-            3 => peripherals.pins.get_pin(RPGpio::GPIO3),
-            // Used for i2c. Comment them in if you don't use i2c.
-            // 4 => peripherals.pins.get_pin(RPGpio::GPIO4),
-            // 5 => peripherals.pins.get_pin(RPGpio::GPIO5),
-            6 => peripherals.pins.get_pin(RPGpio::GPIO6),
-            7 => peripherals.pins.get_pin(RPGpio::GPIO7),
-            8 => peripherals.pins.get_pin(RPGpio::GPIO8),
-            9 => peripherals.pins.get_pin(RPGpio::GPIO9),
-            10 => peripherals.pins.get_pin(RPGpio::GPIO10),
-            11 => peripherals.pins.get_pin(RPGpio::GPIO11),
-            12 => peripherals.pins.get_pin(RPGpio::GPIO12),
-            13 => peripherals.pins.get_pin(RPGpio::GPIO13),
-            14 => peripherals.pins.get_pin(RPGpio::GPIO14),
-            15 => peripherals.pins.get_pin(RPGpio::GPIO15),
-            16 => peripherals.pins.get_pin(RPGpio::GPIO16),
-            17 => peripherals.pins.get_pin(RPGpio::GPIO17),
-            18 => peripherals.pins.get_pin(RPGpio::GPIO18),
-            19 => peripherals.pins.get_pin(RPGpio::GPIO19),
-            20 => peripherals.pins.get_pin(RPGpio::GPIO20),
-            21 => peripherals.pins.get_pin(RPGpio::GPIO21),
-            22 => peripherals.pins.get_pin(RPGpio::GPIO22),
-            23 => peripherals.pins.get_pin(RPGpio::GPIO23),
-            24 => peripherals.pins.get_pin(RPGpio::GPIO24),
-            // LED pin
-            // 25 => peripherals.pins.get_pin(RPGpio::GPIO25),
-
-            // Uncomment to use these as GPIO pins instead of ADC pins
-            // 26 => peripherals.pins.get_pin(RPGpio::GPIO26),
-            // 27 => peripherals.pins.get_pin(RPGpio::GPIO27),
-            // 28 => peripherals.pins.get_pin(RPGpio::GPIO28),
-            // 29 => peripherals.pins.get_pin(RPGpio::GPIO29)
-        ),
-    )
-    .finalize(components::gpio_component_static!(RPGpioPin<'static>));
-
-    peripherals.adc.init();
-
-    let adc_mux = components::adc::AdcMuxComponent::new(&peripherals.adc)
-        .finalize(components::adc_mux_component_static!(Adc));
-
-    let temp_sensor = components::temperature_rp2040::TemperatureRp2040Component::new(
-        adc_mux,
-        adc::Channel::Channel4,
-        1.721,
-        0.706,
-    )
-    .finalize(components::temperature_rp2040_adc_component_static!(
-        rp2040::adc::Adc
-    ));
-
     // RTC DATE TIME
 
     match peripherals.rtc.rtc_init() {
@@ -458,36 +378,6 @@ pub unsafe fn setup(
     .finalize(components::date_time_component_static!(
         rp2040::rtc::Rtc<'static>
     ));
-
-    let temperature = components::temperature::TemperatureComponent::new(
-        board_kernel,
-        capsules_extra::temperature::DRIVER_NUM,
-        temp_sensor,
-    )
-    .finalize(components::temperature_component_static!(
-        TemperatureRp2040Sensor
-    ));
-
-    let adc_channel_0 = components::adc::AdcComponent::new(adc_mux, adc::Channel::Channel0)
-        .finalize(components::adc_component_static!(Adc));
-
-    let adc_channel_1 = components::adc::AdcComponent::new(adc_mux, adc::Channel::Channel1)
-        .finalize(components::adc_component_static!(Adc));
-
-    let adc_channel_2 = components::adc::AdcComponent::new(adc_mux, adc::Channel::Channel2)
-        .finalize(components::adc_component_static!(Adc));
-
-    let adc_channel_3 = components::adc::AdcComponent::new(adc_mux, adc::Channel::Channel3)
-        .finalize(components::adc_component_static!(Adc));
-
-    let adc =
-        components::adc::AdcVirtualComponent::new(board_kernel, capsules_core::adc::DRIVER_NUM)
-            .finalize(components::adc_syscall_component_helper!(
-                adc_channel_0,
-                adc_channel_1,
-                adc_channel_2,
-                adc_channel_3,
-            ));
 
     // PROCESS CONSOLE
     let process_printer = components::process_printer::ProcessPrinterTextComponent::new()
@@ -506,34 +396,6 @@ pub unsafe fn setup(
     .finalize(components::process_console_component_static!(RPTimer));
     let _ = process_console.start();
 
-    let sda_pin = peripherals.pins.get_pin(RPGpio::GPIO4);
-    let scl_pin = peripherals.pins.get_pin(RPGpio::GPIO5);
-
-    sda_pin.set_function(GpioFunction::I2C);
-    scl_pin.set_function(GpioFunction::I2C);
-
-    sda_pin.set_floating_state(FloatingState::PullUp);
-    scl_pin.set_floating_state(FloatingState::PullUp);
-
-    let i2c_master_buffer = static_init!(
-        [u8; capsules_core::i2c_master::BUFFER_LENGTH],
-        [0; capsules_core::i2c_master::BUFFER_LENGTH]
-    );
-    let i2c0 = &peripherals.i2c0;
-    let i2c = static_init!(
-        I2CMasterDriver<I2c<'static, 'static>>,
-        I2CMasterDriver::new(
-            i2c0,
-            i2c_master_buffer,
-            board_kernel.create_grant(
-                capsules_core::i2c_master::DRIVER_NUM,
-                &memory_allocation_capability
-            ),
-        )
-    );
-    i2c0.init(10 * 1000);
-    i2c0.set_master_client(i2c);
-
     let platform_type = match peripherals.sysinfo.get_platform() {
         sysinfo::Platform::Asic => "ASIC",
         sysinfo::Platform::Fpga => "FPGA",
@@ -551,10 +413,6 @@ pub unsafe fn setup(
     let platform = Platform {
         console,
         alarm,
-        gpio,
-        adc,
-        temperature,
-        i2c,
         date_time,
         systick: cortexm0p::systick::SysTick::new_with_calibration(125_000_000),
         ipc: kernel::ipc::IPC::new(
