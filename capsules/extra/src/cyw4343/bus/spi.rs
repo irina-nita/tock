@@ -532,7 +532,28 @@ impl<'a, S: SpiMasterDevice<'a>, A: kernel::hil::time::Alarm<'a>> SpiMasterClien
                     if let Some((jmp, pos)) = self.read.take() {
                         let val = &data[pos as usize..];
                         let val = u32::from_le_bytes([val[0], val[1], val[2], val[3]]);
-                        jmp(val, &mut idx)
+
+                        // NOTE: This is a quick hack to wait between readings of
+                        // the REG_BUS_STATUS register. It seems like if we don't wait,
+                        // (sometimes) it breaks due to too many readings (I'm not sure why
+                        // since there isn't an official documentation)
+
+                        const F2_READY_STATUS_IDX: u8 = 50;
+
+                        let last_idx_is_reading_f2 = idx == F2_READY_STATUS_IDX;
+
+                        jmp(val, &mut idx); // Update current index
+                        let curr_idx_is_reading_f2 = idx == F2_READY_STATUS_IDX;
+
+                        if last_idx_is_reading_f2 && curr_idx_is_reading_f2 {
+                            reset_and_restore_bufs!(self, extra, data);
+                            // NOTE: This helps because it doesn't modify the `alarm fired` code,
+                            // which just increments the index. Quick dirty hack, but it works.
+                            self.inner_state.set(State::Init(idx - 1));
+                            self.alarm
+                                .set_alarm(self.alarm.now(), self.alarm.ticks_from_ms(1000));
+                            return;
+                        }
                     } else {
                         idx += 1
                     }
