@@ -19,8 +19,8 @@ pub(crate) const BACKPLANE_ADDRESS_MASK: u32 = 0x7FFF;
 pub(crate) const BACKPLANE_WINDOW_SIZE: u32 = BACKPLANE_ADDRESS_MASK + 1;
 
 pub(crate) const SDIOD_CORE_BASE_ADDRESS: u32 = 0x18002000;
-pub(crate) const I_HMB_SW_MASK: u32 = 0x24;
-pub(crate) const SDIO_INT_HOST_MASK: u32 = 0x000000f0;
+pub(crate) const I_HMB_SW_MASK: u32 = 0x000000f0;
+pub(crate) const SDIO_INT_HOST_MASK: u32 = 0x24;
 
 pub(crate) const STATUS_F2_RX_READY: u32 = 0x20;
 
